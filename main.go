@@ -1,18 +1,48 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
 	"log"
+	"net/http"
+	"net/url"
+	"strconv"
 
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/joho/godotenv"
 )
+
+// Pass token and sensible APIs through environment variables
+const (
+	telegramApiBaseUrl     string = "https://api.telegram.org/bot"
+	telegramApiSendMessage string = "/sendMessage"
+	telegramTokenEnv       string = "TELEGRAM_BOT_TOKEN"
+)
+
+// Update is a Telegram object that the handler receives every time an user interacts with the bot.
+type Update struct {
+	UpdateId int     `json:"update_id"`
+	Message  Message `json:"message"`
+}
+
+// Message is a Telegram object that can be found in an update.
+type Message struct {
+	Text string `json:"text"`
+	Chat Chat   `json:"chat"`
+}
+
+// A Telegram Chat indicates the conversation to which the message belongs.
+type Chat struct {
+	Id int `json:"id"`
+}
 
 var (
 	myEnv   map[string]string
 	infoMap map[string]string
+	token   string
 )
 
+// Set all parametrs
 func init() {
 	helpStartInfo := `
 /start   - get information about all bot commands
@@ -29,32 +59,75 @@ https://animated-panda-0382af.netlify.app/
 	infoMap["help"] = helpStartInfo
 	infoMap["about"] = "Rozhko Dmytro; Go developer; bad character; unmarried (C)"
 	infoMap["links"] = linksInfo
+
+	// Set token
+	token = mustToken()
 }
 
 func main() {
-	// Create bot
-	t := mustToken()
-	bot := createBot(t)
+}
 
-	// fixed info about name telegram bot
-	log.Printf("Authorized on account %s", bot.Self.UserName)
+// parseTelegramRequest handles incoming update from the Telegram web hook
+func parseTelegramRequest(r *http.Request) (*Update, error) {
+	var update Update
+	fmt.Println(r.Body)
+	if err := json.NewDecoder(r.Body).Decode(&update); err != nil {
+		log.Printf("could not decode incoming update %s", err.Error())
+		return nil, err
+	}
+	return &update, nil
+}
 
-	// main logic: w8 for command and send answer
-	u := tgbotapi.NewUpdate(60)
-	updates := bot.GetUpdatesChan(u)
+// HandleTelegramWebHook sends a message back to the chat with a punchline starting by the message provided by the user.
+func HandleTelegramWebHook(w http.ResponseWriter, r *http.Request) {
+	// Parse incoming request
+	update, err := parseTelegramRequest(r)
+	if err != nil {
+		log.Printf("error parsing update, %s", err.Error())
+		return
+	}
 
-	for update := range updates {
-		if update.Message != nil { // If we got a message
-			if update.Message.IsCommand() {
-				msg := tgbotapi.NewMessage(update.Message.Chat.ID, infoMap[update.Message.Command()])
-				bot.Send(msg)
-			}
-		}
+	// If we got a message
+	if update.Message.Text != "" {
+		sendTextToTelegramChat(update.Message.Chat.Id, infoMap[update.Message.Text])
+	}
+
+	// Send the punchline back to Telegram
+	msg := infoMap[update.Message.Text]
+	telegramResponseBody, errTelegram := sendTextToTelegramChat(update.Message.Chat.Id, msg)
+	if errTelegram != nil {
+		log.Printf("got error %s from telegram, reponse body is %s", errTelegram.Error(), telegramResponseBody)
+	} else {
+		log.Printf("punchline %s successfuly distributed to chat id %d", msg, update.Message.Chat.Id)
 	}
 }
 
-/* func sendAnswer(update tgbotapi.Update) {
-} */
+// sendTextToTelegramChat sends a text message to the Telegram chat identified by its chat Id
+func sendTextToTelegramChat(chatId int, text string) (string, error) {
+	log.Printf("Sending %s to chat_id: %d", text, chatId)
+	var telegramApi string = apiUrl() + "/sendMessage"
+	response, err := http.PostForm(
+		telegramApi,
+		url.Values{
+			"chat_id": {strconv.Itoa(chatId)},
+			"text":    {text},
+		})
+	if err != nil {
+		log.Printf("error when posting text to the chat: %s", err.Error())
+		return "", err
+	}
+	defer response.Body.Close()
+
+	bodyBytes, errRead := io.ReadAll(response.Body)
+	if errRead != nil {
+		log.Printf("error in parsing telegram answer %s", errRead.Error())
+		return "", err
+	}
+	bodyString := string(bodyBytes)
+	log.Printf("Body of Telegram Response: %s", bodyString)
+
+	return bodyString, nil
+}
 
 // return token telegram bot or exit
 func mustToken() string {
@@ -66,7 +139,7 @@ func mustToken() string {
 	}
 
 	// Get the token from the environment variable
-	token := myEnv["TELEGRAM_BOT_TOKEN"]
+	token := myEnv[telegramTokenEnv]
 	if token == "" {
 		log.Fatal("TELEGRAM_BOT_TOKEN environment variable not set")
 	}
@@ -74,16 +147,6 @@ func mustToken() string {
 	return token
 }
 
-func createBot(token string) *tgbotapi.BotAPI {
-	fmt.Println(token)
-
-	// Create a new bot instance
-	bot, err := tgbotapi.NewBotAPI(token)
-	if err != nil {
-		log.Panic(err)
-	}
-
-	bot.Debug = true // Enable debugging mode
-
-	return bot
+func apiUrl() string {
+	return telegramApiBaseUrl + token
 }
