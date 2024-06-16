@@ -47,7 +47,7 @@ func (s myFakeService) RoundTrip(req *http.Request) (*http.Response, error) {
 	return s(req)
 }
 
-func TestGetFact2(t *testing.T) {
+func TestParseUpdateMessageWithReplaceTransport(t *testing.T) {
 	client := &http.Client{
 		Transport: myFakeService(func(*http.Request) (*http.Response, error) {
 			return &http.Response{
@@ -64,5 +64,5 @@ func TestGetFact2(t *testing.T) {
 
 	updateToTest, errParse := parseTelegramRequest(req)
 
-	
+
 }
