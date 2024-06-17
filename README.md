@@ -16,7 +16,7 @@ Set secret environment variables to .env file (firstly You sude rename ".sample.
 /start and /help – shows a list of commands with reply markup
 
 ## Badges
-![alt text](/src/img/example.png)
+![alt text](/storage/img/example.png)
 ## Visuals
 
 ## Usage
