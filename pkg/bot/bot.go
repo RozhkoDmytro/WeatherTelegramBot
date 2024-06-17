@@ -10,15 +10,16 @@ import (
 	"strconv"
 
 	"projecttelegrambot/pkg/types"
+
+	"github.com/joho/godotenv"
 )
 
 const (
-	telegramAPI = "https://api.telegram.org/bot"
+	telegramAPI      = "https://api.telegram.org/bot"
+	telegramTokenEnv = "TELEGRAM_BOT_TOKEN"
 )
 
-func RunCommand(update types.Update) string {
-	fmt.Println("212341234134 " + update.Message.Text)
-
+func RunCommand(c string) string {
 	helpStartInfo := `
 /start   - get information about all bot commands
 /help    - too same like start
@@ -36,7 +37,11 @@ https://animated-panda-0382af.netlify.app/
 		"/links": linksInfo,
 	}
 
-	return infoMap[update.Message.Text]
+	result := infoMap[c]
+	if result == "" {
+		result = "Unknown command!"
+	}
+	return result
 }
 
 func GetUpdates(token string, offset int) (*types.GetUpdatesResponse, error) {
@@ -47,17 +52,24 @@ func GetUpdates(token string, offset int) (*types.GetUpdatesResponse, error) {
 	}
 	defer resp.Body.Close()
 
-	var updates types.GetUpdatesResponse
-	if err := json.NewDecoder(resp.Body).Decode(&updates); err != nil {
+	return ParseTelegramRequest(resp)
+}
+
+// parseTelegramRequest handles incoming update from the Telegram web hook
+func ParseTelegramRequest(r *http.Response) (*types.GetUpdatesResponse, error) {
+	var update types.GetUpdatesResponse
+	if err := json.NewDecoder(r.Body).Decode(&update); err != nil {
+		log.Printf("could not decode incoming update %s", err.Error())
 		return nil, err
 	}
-	return &updates, nil
+
+	return &update, nil
 }
 
 // sendTextToTelegramChat sends a text message to the Telegram chat identified by its chat Id
-func Send(chatId int, text string, token string) (string, error) {
+func Send(chatId int, text string, telegramToken string) (string, error) {
 	log.Printf("Sending %s to chat_id: %d", text, chatId)
-	var telegramApi string = telegramAPI + token + "/sendMessage"
+	var telegramApi string = telegramAPI + telegramToken + "/sendMessage"
 	response, err := http.PostForm(
 		telegramApi,
 		url.Values{
@@ -79,4 +91,21 @@ func Send(chatId int, text string, token string) (string, error) {
 	log.Printf("Body of Telegram Response: %s", bodyString)
 
 	return bodyString, nil
+}
+
+// return token telegram bot or exit
+func MustToken() string {
+	// Initialized ENV from file
+	myEnv, err := godotenv.Read()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
+	// Get the token from the environment variable
+	token := myEnv[telegramTokenEnv]
+	if token == "" {
+		log.Fatal("TELEGRAM_BOT_TOKEN environment variable not set")
+	}
+
+	return token
 }
