@@ -25,7 +25,7 @@ func main() {
 		}
 
 		for _, update := range updates.Result {
-			msg := bot.RunCommand(update.Message.Text)
+			msg := bot.GetInfo(update.Message.Text)
 			bot.Send(int(update.Message.Chat.ID), msg, telegramToken)
 			offset = update.UpdateID + 1
 		}

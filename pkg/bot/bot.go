@@ -15,28 +15,28 @@ import (
 )
 
 const (
-	telegramAPI      = "https://api.telegram.org/bot"
-	telegramTokenEnv = "TELEGRAM_BOT_TOKEN"
-)
-
-func RunCommand(c string) string {
-	helpStartInfo := `
+	telegramAPI          = "https://api.telegram.org/bot"
+	telegramTokenEnv     = "TELEGRAM_BOT_TOKEN"
+	DefaultHelpStartInfo = `
 /start   - get information about all bot commands
 /help    - too same like start
 /about  - get some information about me
 /links   - send my(developer) links`
 
-	linksInfo := `
+	DefaultLinksInfo = `
 https://www.linkedin.com/in/dmytro-rozhko-bas-1c-golang-junior/
 https://animated-panda-0382af.netlify.app/
 	`
-	infoMap := map[string]string{
-		"/start": helpStartInfo,
-		"/help":  helpStartInfo,
-		"/about": "Rozhko Dmytro; Go developer; bad character; unmarried (C)",
-		"/links": linksInfo,
-	}
+)
 
+var infoMap = map[string]string{
+	"/start": DefaultHelpStartInfo,
+	"/help":  DefaultHelpStartInfo,
+	"/about": "Rozhko Dmytro; Go developer; bad character; unmarried (C)",
+	"/links": DefaultLinksInfo,
+}
+
+func GetInfo(c string) string {
 	result := infoMap[c]
 	if result == "" {
 		result = "Unknown command!"

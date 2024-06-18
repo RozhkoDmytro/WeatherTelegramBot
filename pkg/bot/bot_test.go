@@ -54,25 +54,15 @@ func TestParseTelegramRequest(t *testing.T) {
 }
 
 func TestCommand(t *testing.T) {
-	helpStartInfo := `
-/start   - get information about all bot commands
-/help    - too same like start
-/about  - get some information about me
-/links   - send my(developer) links`
-	linksInfo := `
-https://www.linkedin.com/in/dmytro-rozhko-bas-1c-golang-junior/
-https://animated-panda-0382af.netlify.app/
-	`
-
 	testCases = map[string]GenericTestCase{
 		// int
 		"test command start": {
 			input:    "/start",
-			expected: helpStartInfo,
+			expected: bot.DefaultHelpStartInfo,
 		},
 		"test command info": {
 			input:    "/help",
-			expected: helpStartInfo,
+			expected: bot.DefaultHelpStartInfo,
 		},
 		"test command about": {
 			input:    "/about",
@@ -80,7 +70,7 @@ https://animated-panda-0382af.netlify.app/
 		},
 		"test command links": {
 			input:    "/links",
-			expected: linksInfo,
+			expected: bot.DefaultLinksInfo,
 		},
 	}
 
@@ -88,7 +78,7 @@ https://animated-panda-0382af.netlify.app/
 		t.Run("int test", func(t *testing.T) {
 			// Keep
 			expected := tc.expected
-			result := bot.RunCommand(tc.input)
+			result := bot.GetInfo(tc.input)
 			assert.Equal(t, expected, result, name)
 		})
 	}
