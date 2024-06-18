@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"projecttelegrambot/config"
 	"projecttelegrambot/pkg/bot"
 )
 
@@ -15,8 +16,9 @@ var telegramToken = ""
 
 func main() {
 	offset := 0
-	telegramToken = bot.MustToken()
+	telegramToken = config.MustToken()
 
+	fmt.Println("token - ", telegramToken)
 	for {
 		updates, err := bot.GetUpdates(telegramToken, offset)
 		if err != nil {

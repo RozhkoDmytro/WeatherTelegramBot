@@ -8,8 +8,6 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
-
-	"github.com/joho/godotenv"
 )
 
 type Update struct {
@@ -46,7 +44,6 @@ type GetUpdatesResponse struct {
 
 const (
 	telegramAPI          = "https://api.telegram.org/bot"
-	telegramTokenEnv     = "TELEGRAM_BOT_TOKEN"
 	DefaultHelpStartInfo = `
 /start   - get information about all bot commands
 /help    - too same like start
@@ -121,21 +118,4 @@ func Send(chatId int, text string, telegramToken string) (string, error) {
 	log.Printf("Body of Telegram Response: %s", bodyString)
 
 	return bodyString, nil
-}
-
-// return token telegram bot or exit
-func MustToken() string {
-	// Initialized ENV from file
-	myEnv, err := godotenv.Read()
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
-
-	// Get the token from the environment variable
-	token := myEnv[telegramTokenEnv]
-	if token == "" {
-		log.Fatal("TELEGRAM_BOT_TOKEN environment variable not set")
-	}
-
-	return token
 }
