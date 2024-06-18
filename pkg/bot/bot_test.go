@@ -49,7 +49,8 @@ func TestParseTelegramRequest(t *testing.T) {
 	})
 
 	resp, _ := client.Get("")
-	result, _ := bot.ParseTelegramRequest(resp)
+	var telegramBot bot.ApiTelegramBot
+	result, _ := telegramBot.ParseTelegramRequest(resp)
 	assert.Equal(t, "/start", result.Result[0].Message.Text)
 }
 
@@ -74,11 +75,12 @@ func TestCommand(t *testing.T) {
 		},
 	}
 
+	var telegramBot bot.ApiTelegramBot
 	for name, tc := range testCases {
 		t.Run("int test", func(t *testing.T) {
 			// Keep
 			expected := tc.expected
-			result := bot.GetInfo(tc.input)
+			result := telegramBot.CreateResponseToCommand(tc.input)
 			assert.Equal(t, expected, result, name)
 		})
 	}

@@ -42,6 +42,12 @@ type GetUpdatesResponse struct {
 	Result []Update `json:"result"`
 }
 
+type ApiTelegramBot struct {
+	Token  string
+	Offset int
+	ChatId int
+}
+
 const (
 	telegramAPI          = "https://api.telegram.org/bot"
 	DefaultHelpStartInfo = `
@@ -63,7 +69,7 @@ var infoMap = map[string]string{
 	"/links": DefaultLinksInfo,
 }
 
-func GetInfo(c string) string {
+func (bot *ApiTelegramBot) CreateResponseToCommand(c string) string {
 	result := infoMap[c]
 	if result == "" {
 		result = "Unknown command!"
@@ -71,19 +77,19 @@ func GetInfo(c string) string {
 	return result
 }
 
-func GetUpdates(token string, offset int) (*GetUpdatesResponse, error) {
-	url := fmt.Sprintf("%s%s/getUpdates?offset=%d", telegramAPI, token, offset)
+func (bot *ApiTelegramBot) GetUpdates() (*GetUpdatesResponse, error) {
+	url := fmt.Sprintf("%s%s/getUpdates?offset=%d", telegramAPI, bot.Token, bot.Offset)
 	resp, err := http.Get(url)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
 
-	return ParseTelegramRequest(resp)
+	return bot.ParseTelegramRequest(resp)
 }
 
 // parseTelegramRequest handles incoming update from the Telegram web hook
-func ParseTelegramRequest(r *http.Response) (*GetUpdatesResponse, error) {
+func (bot *ApiTelegramBot) ParseTelegramRequest(r *http.Response) (*GetUpdatesResponse, error) {
 	var update GetUpdatesResponse
 	if err := json.NewDecoder(r.Body).Decode(&update); err != nil {
 		log.Printf("could not decode incoming update %s", err.Error())
@@ -94,13 +100,13 @@ func ParseTelegramRequest(r *http.Response) (*GetUpdatesResponse, error) {
 }
 
 // sendTextToTelegramChat sends a text message to the Telegram chat identified by its chat Id
-func Send(chatId int, text string, telegramToken string) (string, error) {
-	log.Printf("Sending %s to chat_id: %d", text, chatId)
-	var telegramApi string = telegramAPI + telegramToken + "/sendMessage"
+func (bot *ApiTelegramBot) Send(text string) (string, error) {
+	log.Printf("Sending %s to chat_id: %d", text, bot.ChatId)
+	var telegramApi string = telegramAPI + bot.Token + "/sendMessage"
 	response, err := http.PostForm(
 		telegramApi,
 		url.Values{
-			"chat_id": {strconv.Itoa(chatId)},
+			"chat_id": {strconv.Itoa(bot.ChatId)},
 			"text":    {text},
 		})
 	if err != nil {

@@ -12,24 +12,26 @@ const (
 	defualtTimeout = 2 // in seconds
 )
 
-var telegramToken = ""
+var telegramBot = bot.ApiTelegramBot{
+	Token: config.MustToken(),
+}
 
 func main() {
-	offset := 0
-	telegramToken = config.MustToken()
-
-	fmt.Println("token - ", telegramToken)
 	for {
-		updates, err := bot.GetUpdates(telegramToken, offset)
+		updates, err := telegramBot.GetUpdates()
 		if err != nil {
 			fmt.Printf("Failed to get updates: %v\n", err)
 			return
 		}
 
 		for _, update := range updates.Result {
-			msg := bot.GetInfo(update.Message.Text)
-			bot.Send(int(update.Message.Chat.ID), msg, telegramToken)
-			offset = update.UpdateID + 1
+			// update ChatID
+			telegramBot.ChatId = int(update.Message.Chat.ID)
+
+			// Create and send rescponse
+			msg := telegramBot.CreateResponseToCommand(update.Message.Text)
+			telegramBot.Send(msg)
+			telegramBot.Offset = update.UpdateID + 1
 		}
 
 		// Sleep for a bit before polling again
