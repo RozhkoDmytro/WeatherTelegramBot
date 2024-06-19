@@ -92,11 +92,11 @@ func (bot *ApiTelegramBot) GetUpdates() (*GetUpdatesResponse, error) {
 	}
 	defer resp.Body.Close()
 
-	return bot.ParseTelegramRequest(resp)
+	return bot.parseTelegramRequest(resp)
 }
 
 // parseTelegramRequest handles incoming update from the Telegram web hook
-func (bot *ApiTelegramBot) ParseTelegramRequest(r *http.Response) (*GetUpdatesResponse, error) {
+func (bot *ApiTelegramBot) parseTelegramRequest(r *http.Response) (*GetUpdatesResponse, error) {
 	var update GetUpdatesResponse
 	if err := json.NewDecoder(r.Body).Decode(&update); err != nil {
 		log.Printf("could not decode incoming update %s", err.Error())

@@ -1,12 +1,10 @@
-package bot_test
+package bot
 
 import (
 	"io"
 	"net/http"
 	"strings"
 	"testing"
-
-	"projecttelegrambot/pkg/bot"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -49,8 +47,8 @@ func TestParseTelegramRequest(t *testing.T) {
 	})
 
 	resp, _ := client.Get("")
-	var telegramBot bot.ApiTelegramBot
-	result, _ := telegramBot.ParseTelegramRequest(resp)
+	var telegramBot ApiTelegramBot
+	result, _ := telegramBot.parseTelegramRequest(resp)
 	assert.Equal(t, "/start", result.Result[0].Message.Text)
 }
 
@@ -59,11 +57,11 @@ func TestCommand(t *testing.T) {
 		// int
 		"test command start": {
 			input:    "/start",
-			expected: bot.DefaultHelpStartInfo,
+			expected: DefaultHelpStartInfo,
 		},
 		"test command info": {
 			input:    "/help",
-			expected: bot.DefaultHelpStartInfo,
+			expected: DefaultHelpStartInfo,
 		},
 		"test command about": {
 			input:    "/about",
@@ -71,11 +69,11 @@ func TestCommand(t *testing.T) {
 		},
 		"test command links": {
 			input:    "/links",
-			expected: bot.DefaultLinksInfo,
+			expected: DefaultLinksInfo,
 		},
 	}
 
-	var telegramBot bot.ApiTelegramBot
+	var telegramBot ApiTelegramBot
 	for name, tc := range testCases {
 		t.Run("int test", func(t *testing.T) {
 			// Keep
