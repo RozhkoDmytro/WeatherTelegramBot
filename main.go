@@ -31,7 +31,7 @@ func main() {
 
 	// Create a new telegram bot
 	telegramBot := bot.NewBot(cfg.Token, child)
-	child.Info("Test")
+
 	for {
 		updates, err := telegramBot.GetUpdates()
 		if err != nil {
