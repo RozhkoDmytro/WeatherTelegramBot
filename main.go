@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"log"
 	"time"
 
 	"projecttelegrambot/pkg/bot"
@@ -12,16 +12,19 @@ const (
 	defualtTimeout = 2 // in seconds
 )
 
-var telegramBot = bot.ApiTelegramBot{
-	Token: config.MustToken(),
-}
-
 func main() {
+	// Get confog with env
+	cfg, err := config.Load()
+	if err != nil {
+		log.Fatalf("Failed to get correct config: %v\n", err)
+	}
+	// Create a new telegram bot
+	telegramBot := bot.NewBot(cfg.Token)
+
 	for {
 		updates, err := telegramBot.GetUpdates()
 		if err != nil {
-			fmt.Printf("Failed to get updates: %v\n", err)
-			return
+			log.Fatalf("Failed to get updates: %v\n", err)
 		}
 
 		for _, update := range updates.Result {
@@ -29,8 +32,11 @@ func main() {
 			telegramBot.ChatId = int(update.Message.Chat.ID)
 
 			// Create and send rescponse
-			msg := telegramBot.а(update.Message.Text)
-			telegramBot.Send(msg)
+			msg := telegramBot.CreateResponseToCommand(update.Message.Text)
+			_, err := telegramBot.Send(msg)
+			if err != nil {
+				log.Fatalf("Failed to send message: %v\n", err)
+			}
 			telegramBot.Offset = update.UpdateID + 1
 		}
 

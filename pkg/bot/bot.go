@@ -69,6 +69,13 @@ var infoMap = map[string]string{
 	"/links": DefaultLinksInfo,
 }
 
+func NewBot(t string) *ApiTelegramBot {
+	telegramBot := ApiTelegramBot{
+		Token: t,
+	}
+	return &telegramBot
+}
+
 func (bot *ApiTelegramBot) CreateResponseToCommand(c string) string {
 	result := infoMap[c]
 	if result == "" {
