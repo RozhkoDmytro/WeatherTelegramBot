@@ -1,3 +1,4 @@
 .env
 # Ignore the .vscode folder
 .vscode/
+*.log

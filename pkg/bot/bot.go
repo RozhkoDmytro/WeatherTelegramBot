@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -46,6 +46,7 @@ type ApiTelegramBot struct {
 	Token  string
 	Offset int
 	ChatId int
+	Logger *slog.Logger
 }
 
 const (
@@ -69,9 +70,10 @@ var infoMap = map[string]string{
 	"/links": DefaultLinksInfo,
 }
 
-func NewBot(t string) *ApiTelegramBot {
+func NewBot(t string, l *slog.Logger) *ApiTelegramBot {
 	telegramBot := ApiTelegramBot{
-		Token: t,
+		Token:  t,
+		Logger: l,
 	}
 	return &telegramBot
 }
@@ -99,7 +101,7 @@ func (bot *ApiTelegramBot) GetUpdates() (*GetUpdatesResponse, error) {
 func (bot *ApiTelegramBot) parseTelegramRequest(r *http.Response) (*GetUpdatesResponse, error) {
 	var update GetUpdatesResponse
 	if err := json.NewDecoder(r.Body).Decode(&update); err != nil {
-		log.Printf("could not decode incoming update %s", err.Error())
+		bot.Logger.Info("could not decode incoming update", "err", err.Error())
 		return nil, err
 	}
 
@@ -108,7 +110,6 @@ func (bot *ApiTelegramBot) parseTelegramRequest(r *http.Response) (*GetUpdatesRe
 
 // sendTextToTelegramChat sends a text message to the Telegram chat identified by its chat Id
 func (bot *ApiTelegramBot) Send(text string) (string, error) {
-	log.Printf("Sending %s to chat_id: %d", text, bot.ChatId)
 	var telegramApi string = telegramAPI + bot.Token + "/sendMessage"
 	response, err := http.PostForm(
 		telegramApi,
@@ -117,18 +118,16 @@ func (bot *ApiTelegramBot) Send(text string) (string, error) {
 			"text":    {text},
 		})
 	if err != nil {
-		log.Printf("error when posting text to the chat: %s", err.Error())
 		return "", err
 	}
 	defer response.Body.Close()
 
 	bodyBytes, errRead := io.ReadAll(response.Body)
 	if errRead != nil {
-		log.Printf("error in parsing telegram answer %s", errRead.Error())
 		return "", err
 	}
 	bodyString := string(bodyBytes)
-	log.Printf("Body of Telegram Response: %s", bodyString)
+	bot.Logger.Info("Body of Telegram Response:", "body", bodyString)
 
 	return bodyString, nil
 }
