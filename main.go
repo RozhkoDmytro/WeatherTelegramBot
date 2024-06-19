@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"projecttelegrambot/config"
 	"projecttelegrambot/pkg/bot"
+	"projecttelegrambot/pkg/config"
 )
 
 const (
@@ -29,7 +29,7 @@ func main() {
 			telegramBot.ChatId = int(update.Message.Chat.ID)
 
 			// Create and send rescponse
-			msg := telegramBot.CreateResponseToCommand(update.Message.Text)
+			msg := telegramBot.а(update.Message.Text)
 			telegramBot.Send(msg)
 			telegramBot.Offset = update.UpdateID + 1
 		}
