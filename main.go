@@ -33,8 +33,6 @@ func main() {
 	telegramBot := bot.NewBot(cfg.Token, logger)
 
 	for {
-		// set UUID for this request
-		logger = logger.With(slog.String("UUID", uuid.New().String()))
 
 		// Get updates
 		updates, err := telegramBot.GetUpdates()
@@ -43,12 +41,16 @@ func main() {
 			return
 		}
 
+		// set UUID for this request for this child logger
+		childLogger := logger.With(slog.String("UUID", uuid.New().String()))
+		telegramBot.Logger = childLogger
+
 		for _, update := range updates.Result {
 			// Create and send rescponse
 			msg := telegramBot.CreateResponseToCommand(update.Message.Text)
 			_, err := telegramBot.Send(update.Message.Chat.ID, msg)
 			if err != nil {
-				logger.Error("Failed to send message: %v\n", err)
+				childLogger.Error("Failed to send message: %v\n", err)
 				return
 			}
 			telegramBot.Offset = update.UpdateID + 1
