@@ -23,31 +23,32 @@ func main() {
 		panic(err)
 	}
 
-	// create logger
-	child, err := createChild(cfg.NameLog)
+	// Create logger
+	logger, err := createLogger(cfg.NameLog)
 	if err != nil {
 		panic(err)
 	}
 
 	// Create a new telegram bot
-	telegramBot := bot.NewBot(cfg.Token, child)
+	telegramBot := bot.NewBot(cfg.Token, logger)
 
 	for {
+		// set UUID for this request
+		logger = logger.With(slog.String("UUID", uuid.New().String()))
+
+		// Get updates
 		updates, err := telegramBot.GetUpdates()
 		if err != nil {
-			child.Error("Failed to get updates: %v\n", err)
+			logger.Error("Failed to get updates: %v\n", err)
 			return
 		}
 
 		for _, update := range updates.Result {
-			// update ChatID
-			telegramBot.ChatId = int(update.Message.Chat.ID)
-
 			// Create and send rescponse
 			msg := telegramBot.CreateResponseToCommand(update.Message.Text)
-			_, err := telegramBot.Send(msg)
+			_, err := telegramBot.Send(update.Message.Chat.ID, msg)
 			if err != nil {
-				child.Error("Failed to send message: %v\n", err)
+				logger.Error("Failed to send message: %v\n", err)
 				return
 			}
 			telegramBot.Offset = update.UpdateID + 1
@@ -59,7 +60,7 @@ func main() {
 }
 
 // Create logger and set fields
-func createChild(NameLog string) (*slog.Logger, error) {
+func createLogger(NameLog string) (*slog.Logger, error) {
 	// Create logger
 	file, err := os.OpenFile(NameLog, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o666)
 	if err != nil {
@@ -73,6 +74,5 @@ func createChild(NameLog string) (*slog.Logger, error) {
 	logger := slog.New(handler)
 	slog.SetDefault(logger)
 
-	child := logger.With(slog.String("UUID", uuid.New().String()))
-	return child, nil
+	return logger, nil
 }

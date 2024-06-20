@@ -7,22 +7,20 @@ import (
 	"github.com/joho/godotenv"
 )
 
-type config struct {
+type Config struct {
 	Token   string `env:"TELEGRAM_BOT_TOKEN"`
 	NameLog string `env:"NAME_LOG_FILE"`
 }
 
 // return token telegram bot or exit
-func Load() (config, error) {
-	var cfg config
-
+func Load() (Config, error) {
 	// Load .env file
 	if err := godotenv.Load(); err != nil {
-		return cfg, err
+		return Config{}, err
 	}
 
 	// Parse environment variables into Config struct
-	cfg = config{}
+	cfg := Config{}
 	if err := env.Parse(&cfg); err != nil {
 		return cfg, err
 	}

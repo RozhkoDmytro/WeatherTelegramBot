@@ -2,6 +2,7 @@ package bot
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -22,7 +23,7 @@ type Update struct {
 			Language  string `json:"language_code"`
 		} `json:"from"`
 		Chat struct {
-			ID        int64  `json:"id"`
+			ID        int    `json:"id"`
 			FirstName string `json:"first_name"`
 			Username  string `json:"username"`
 			Type      string `json:"type"`
@@ -45,7 +46,6 @@ type GetUpdatesResponse struct {
 type ApiTelegramBot struct {
 	Token  string
 	Offset int
-	ChatId int
 	Logger *slog.Logger
 }
 
@@ -92,6 +92,12 @@ func (bot *ApiTelegramBot) GetUpdates() (*GetUpdatesResponse, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// Check the status code
+	if resp.StatusCode != http.StatusOK {
+		err := errors.New("Error: received status code:" + strconv.Itoa(resp.StatusCode))
+		return nil, err
+	}
 	defer resp.Body.Close()
 
 	return bot.parseTelegramRequest(resp)
@@ -109,12 +115,12 @@ func (bot *ApiTelegramBot) parseTelegramRequest(r *http.Response) (*GetUpdatesRe
 }
 
 // sendTextToTelegramChat sends a text message to the Telegram chat identified by its chat Id
-func (bot *ApiTelegramBot) Send(text string) (string, error) {
+func (bot *ApiTelegramBot) Send(chatId int, text string) (string, error) {
 	var telegramApi string = telegramAPI + bot.Token + "/sendMessage"
 	response, err := http.PostForm(
 		telegramApi,
 		url.Values{
-			"chat_id": {strconv.Itoa(bot.ChatId)},
+			"chat_id": {strconv.Itoa(chatId)},
 			"text":    {text},
 		})
 	if err != nil {
