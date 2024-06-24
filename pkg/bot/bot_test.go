@@ -52,12 +52,14 @@ func TestParseTelegramRequest(t *testing.T) {
 	assert.Equal(t, "/start", result.Result[0].Message.Text)
 }
 
-func TestCommand(t *testing.T) {
+func TestCreateReplayMsg(t *testing.T) {
+	var telegramBot ApiTelegramBot
+	chatId := 123456
+
 	testCases = map[string]GenericTestCase{
-		// int
 		"test command start": {
 			input:    "/start",
-			expected: DefaultHelpStartInfo,
+			expected: `{"chat_id":123456,"text":"/start","reply_markup":{"keyboard":[[{"text":"🇺🇸 USA"},{"text":"🇬🇧 UK"},{"text":"🇨🇦 Canada"}],[{"text":"🇦🇺 Australia"},{"text":"🇮🇳 India"},{"text":"🇺🇦 Ukraine"}]],"resize_keyboard":true,"one_time_keyboard":true}}`,
 		},
 		"test command info": {
 			input:    "/help",
@@ -73,13 +75,19 @@ func TestCommand(t *testing.T) {
 		},
 	}
 
-	var telegramBot ApiTelegramBot
 	for name, tc := range testCases {
-		t.Run("int test", func(t *testing.T) {
+		t.Run("Test Create Replay Msg", func(t *testing.T) {
 			// Keep
-			expected := tc.expected
-			result := telegramBot.CreateResponseToCommand(tc.input)
-			assert.Equal(t, expected, result, name)
+
+			if tc.input == "/start" {
+				expected := []byte(tc.expected)
+				result, _ := telegramBot.createReplyKeyboard(chatId, tc.input)
+				assert.Equal(t, expected, result, name)
+			} else {
+				expected, _ := telegramBot.createMsgBody(chatId, tc.expected)
+				result, _ := telegramBot.createReplayMsg(chatId, tc.input)
+				assert.Equal(t, expected, result, name)
+			}
 		})
 	}
 }

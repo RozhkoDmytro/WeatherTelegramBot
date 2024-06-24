@@ -4,16 +4,16 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log/slog"
 	"net/http"
 	"time"
 )
 
-const holidayApiUrl = "https://holidays.abstractapi.com/v1/"
+const HolidayApiUrl = "https://holidays.abstractapi.com/v1/"
 
 type ApiHoliday struct {
-	Token  string
-	Logger *slog.Logger
+	Client  *http.Client
+	baseURL string
+	Token   string
 }
 
 // Define a struct to hold the holiday data
@@ -32,17 +32,19 @@ type Holiday struct {
 	WeekDay     string `json:"week_day"`
 }
 
-func NewApiHoliday(t string) *ApiHoliday {
+func NewApiHoliday(client *http.Client, url string, t string) *ApiHoliday {
 	result := ApiHoliday{
-		Token: t,
+		Token:   t,
+		baseURL: url,
+		Client:  client,
 	}
 	return &result
 }
 
 func (api *ApiHoliday) Load(country string, day time.Time) ([]Holiday, error) {
-	url := fmt.Sprintf(holidayApiUrl+"?api_key=%s&country=%s&year=%d&month=%d&day=%d", api.Token, country, day.Year(), day.Month(), day.Day())
+	url := fmt.Sprintf(api.baseURL+"?api_key=%s&country=%s&year=%d&month=%d&day=%d", api.Token, country, day.Year(), day.Month(), day.Day())
 
-	resp, err := http.Get(url)
+	resp, err := api.Client.Get(url)
 	if err != nil {
 		return nil, err
 	}
@@ -51,13 +53,29 @@ func (api *ApiHoliday) Load(country string, day time.Time) ([]Holiday, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	fmt.Println(string(body))
-
 	var holidays []Holiday
 	if err := json.Unmarshal(body, &holidays); err != nil {
 		return nil, err
 	}
 
+	fmt.Println(holidays)
+
 	return holidays, nil
+}
+
+func (api *ApiHoliday) Names(country string, day time.Time) (string, error) {
+	holydays, err := api.Load(country, day)
+	if err != nil {
+		return "", err
+	}
+	text := ""
+	for _, h := range holydays {
+		text += h.Name
+	}
+
+	if text == "" {
+		text = "There are no holidays in this country today, so sad !"
+	}
+	return text, nil
 }

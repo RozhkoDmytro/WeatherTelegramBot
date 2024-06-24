@@ -95,7 +95,7 @@ var infoMap = map[string]string{
 	"/links": DefaultLinksInfo,
 }
 
-var defualtKeyboard = ReplyKeyboardMarkup{
+var DefualtKeyboard = ReplyKeyboardMarkup{
 	Keyboard: [][]KeyboardButton{
 		{
 			{Text: DefaultFlags[0]},
@@ -205,10 +205,11 @@ func (bot *ApiTelegramBot) createReplyKeyboard(chatID int, text string) ([]byte,
 	msg := ReplayKeyboardMsg{
 		ChatID:      chatID,
 		Text:        text,
-		ReplyMarkup: defualtKeyboard,
+		ReplyMarkup: DefualtKeyboard,
 	}
 
 	body, err := json.Marshal(msg)
+	fmt.Println(string(body))
 	if err != nil {
 		return nil, err
 	}
@@ -224,18 +225,9 @@ func (bot *ApiTelegramBot) createReplayMsg(chatID int, c string) ([]byte, error)
 		return bot.createMsgBody(chatID, infoMap[c])
 	} else {
 		// send API request and create text message with holidays
-		today := time.Now()
-		holydays, err := bot.ApiHolyday.Load(flagsCountryMap[c], today)
+		text, err := bot.ApiHolyday.Names(flagsCountryMap[c], time.Now())
 		if err != nil {
 			return nil, err
-		}
-		text := ""
-		for _, h := range holydays {
-			text += h.Name
-		}
-
-		if text == "" {
-			text = "There are no holidays in this country today, so sad !"
 		}
 		return bot.createMsgBody(chatID, text)
 	}

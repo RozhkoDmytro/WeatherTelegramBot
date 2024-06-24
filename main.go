@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"net/http"
 	"os"
 	"time"
 
@@ -31,12 +32,7 @@ func main() {
 		panic(err)
 	}
 
-	apiHoliday := holiday.NewApiHoliday(cfg.TokenHoliday)
-
-	if err != nil {
-		logger.Error("Failed to get holidays: %v\n", err)
-		return
-	}
+	apiHoliday := holiday.NewApiHoliday(&http.Client{}, holiday.HolidayApiUrl, cfg.TokenHoliday)
 
 	// Create a new telegram bot
 	telegramBot := bot.NewBot(cfg.Token, logger, apiHoliday)
