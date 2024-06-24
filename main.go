@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"io"
 	"log/slog"
 	"os"
@@ -8,6 +9,7 @@ import (
 
 	"projecttelegrambot/pkg/bot"
 	"projecttelegrambot/pkg/config"
+	"projecttelegrambot/pkg/holiday"
 
 	"github.com/google/uuid"
 )
@@ -29,8 +31,15 @@ func main() {
 		panic(err)
 	}
 
+	apiHoliday := holiday.NewApiHoliday(cfg.TokenHoliday)
+
+	if err != nil {
+		logger.Error("Failed to get holidays: %v\n", err)
+		return
+	}
+
 	// Create a new telegram bot
-	telegramBot := bot.NewBot(cfg.Token, logger)
+	telegramBot := bot.NewBot(cfg.Token, logger, apiHoliday)
 
 	for {
 
@@ -47,8 +56,13 @@ func main() {
 
 		for _, update := range updates.Result {
 			// Create and send rescponse
-			msg := telegramBot.CreateResponseToCommand(update.Message.Text)
-			_, err := telegramBot.Send(update.Message.Chat.ID, msg)
+			fmt.Println(update.Message.Text)
+			body, err := telegramBot.CreateResponseToCommand(update.Message.Chat.ID, update.Message.Text)
+			if err != nil {
+				childLogger.Error("Failed to create send message: %v\n", err)
+				return
+			}
+			_, err = telegramBot.Send(update.Message.Chat.ID, body)
 			if err != nil {
 				childLogger.Error("Failed to send message: %v\n", err)
 				return

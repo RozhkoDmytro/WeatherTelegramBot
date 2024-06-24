@@ -8,8 +8,9 @@ import (
 )
 
 type Config struct {
-	Token   string `env:"TELEGRAM_BOT_TOKEN"`
-	NameLog string `env:"NAME_LOG_FILE"`
+	Token        string `env:"TELEGRAM_BOT_TOKEN"`
+	NameLog      string `env:"NAME_LOG_FILE"`
+	TokenHoliday string `env:"HOLIDAY_TOKEN"`
 }
 
 // return token telegram bot or exit

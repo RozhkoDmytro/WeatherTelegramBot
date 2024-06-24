@@ -1,14 +1,17 @@
 package bot
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
-	"net/url"
 	"strconv"
+	"time"
+
+	"projecttelegrambot/pkg/holiday"
 )
 
 type Update struct {
@@ -44,9 +47,31 @@ type GetUpdatesResponse struct {
 }
 
 type ApiTelegramBot struct {
-	Token  string
-	Offset int
-	Logger *slog.Logger
+	Token      string
+	Offset     int
+	Logger     *slog.Logger
+	ApiHolyday *holiday.ApiHoliday
+}
+
+type ReplyKeyboardMarkup struct {
+	Keyboard        [][]KeyboardButton `json:"keyboard"`
+	ResizeKeyboard  bool               `json:"resize_keyboard"`
+	OneTimeKeyboard bool               `json:"one_time_keyboard"`
+}
+
+type KeyboardButton struct {
+	Text string `json:"text"`
+}
+
+type ReplayMsg struct {
+	ChatId int    `json:"chat_id"`
+	Text   string `json:"text"`
+}
+
+type ReplayKeyboardMsg struct {
+	ChatID      int                 `json:"chat_id"`
+	Text        string              `json:"text"`
+	ReplyMarkup ReplyKeyboardMarkup `json:"reply_markup"`
 }
 
 const (
@@ -70,20 +95,57 @@ var infoMap = map[string]string{
 	"/links": DefaultLinksInfo,
 }
 
-func NewBot(t string, l *slog.Logger) *ApiTelegramBot {
+var defualtKeyboard = ReplyKeyboardMarkup{
+	Keyboard: [][]KeyboardButton{
+		{
+			{Text: DefaultFlags[0]},
+			{Text: DefaultFlags[1]},
+			{Text: DefaultFlags[2]},
+		},
+		{
+			{Text: DefaultFlags[3]},
+			{Text: DefaultFlags[4]},
+			{Text: DefaultFlags[5]},
+		},
+	},
+	ResizeKeyboard:  true,
+	OneTimeKeyboard: true,
+}
+
+var DefaultFlags = []string{
+	"🇺🇸 USA",
+	"🇬🇧 UK",
+	"🇨🇦 Canada",
+	"🇦🇺 Australia",
+	"🇮🇳 India",
+	"🇺🇦 Ukraine",
+}
+
+var flagsCountryMap = map[string]string{
+	DefaultFlags[0]: "US",
+	DefaultFlags[1]: "GB",
+	DefaultFlags[2]: "CA",
+	DefaultFlags[3]: "AU",
+	DefaultFlags[4]: "IN",
+	DefaultFlags[5]: "UA",
+}
+
+func NewBot(t string, l *slog.Logger, a *holiday.ApiHoliday) *ApiTelegramBot {
 	telegramBot := ApiTelegramBot{
-		Token:  t,
-		Logger: l,
+		Token:      t,
+		Logger:     l,
+		ApiHolyday: a,
 	}
 	return &telegramBot
 }
 
-func (bot *ApiTelegramBot) CreateResponseToCommand(c string) string {
-	result := infoMap[c]
-	if result == "" {
-		result = "Unknown command!"
+func (bot *ApiTelegramBot) CreateResponseToCommand(chatId int, c string) ([]byte, error) {
+	switch c {
+	case "/start":
+		return bot.createReplyKeyboard(chatId, c)
+	default:
+		return bot.createReplayMsg(chatId, c)
 	}
-	return result
 }
 
 func (bot *ApiTelegramBot) GetUpdates() (*GetUpdatesResponse, error) {
@@ -115,20 +177,20 @@ func (bot *ApiTelegramBot) parseTelegramRequest(r *http.Response) (*GetUpdatesRe
 }
 
 // sendTextToTelegramChat sends a text message to the Telegram chat identified by its chat Id
-func (bot *ApiTelegramBot) Send(chatId int, text string) (string, error) {
-	var telegramApi string = telegramAPI + bot.Token + "/sendMessage"
-	response, err := http.PostForm(
-		telegramApi,
-		url.Values{
-			"chat_id": {strconv.Itoa(chatId)},
-			"text":    {text},
-		})
+func (bot *ApiTelegramBot) Send(chatId int, body []byte) (string, error) {
+	var urlTelegram string = telegramAPI + bot.Token + "/sendMessage"
+	resp, err := http.Post(urlTelegram, "application/json", bytes.NewBuffer(body))
 	if err != nil {
 		return "", err
 	}
-	defer response.Body.Close()
+	defer resp.Body.Close()
 
-	bodyBytes, errRead := io.ReadAll(response.Body)
+	if resp.StatusCode != http.StatusOK {
+		err := errors.New("Error: received status code:" + strconv.Itoa(resp.StatusCode) + " " + string(body))
+		return "", err
+	}
+
+	bodyBytes, errRead := io.ReadAll(resp.Body)
 	if errRead != nil {
 		return "", err
 	}
@@ -136,4 +198,64 @@ func (bot *ApiTelegramBot) Send(chatId int, text string) (string, error) {
 	bot.Logger.Info("Body of Telegram Response:", "body", bodyString)
 
 	return bodyString, nil
+}
+
+// Create Keyboard with defualt key
+func (bot *ApiTelegramBot) createReplyKeyboard(chatID int, text string) ([]byte, error) {
+	msg := ReplayKeyboardMsg{
+		ChatID:      chatID,
+		Text:        text,
+		ReplyMarkup: defualtKeyboard,
+	}
+
+	body, err := json.Marshal(msg)
+	if err != nil {
+		return nil, err
+	}
+
+	return body, nil
+}
+
+// when we know the command shudn't create Keyboard we try send text message
+func (bot *ApiTelegramBot) createReplayMsg(chatID int, c string) ([]byte, error) {
+	if infoMap[c] == "" && flagsCountryMap[c] == "" {
+		return bot.createMsgBody(chatID, "")
+	} else if infoMap[c] != "" {
+		return bot.createMsgBody(chatID, infoMap[c])
+	} else {
+		// send API request and create text message with holidays
+		today := time.Now()
+		holydays, err := bot.ApiHolyday.Load(flagsCountryMap[c], today)
+		if err != nil {
+			return nil, err
+		}
+		text := ""
+		for _, h := range holydays {
+			text += h.Name
+		}
+
+		if text == "" {
+			text = "There are no holidays in this country today, so sad !"
+		}
+		return bot.createMsgBody(chatID, text)
+	}
+}
+
+// helpful func to transformation text in json []byte
+func (bot *ApiTelegramBot) createMsgBody(chatID int, text string) ([]byte, error) {
+	if text == "" {
+		text = "Unknown command!"
+	}
+
+	msg := ReplayMsg{
+		ChatId: chatID,
+		Text:   text,
+	}
+
+	body, err := json.Marshal(msg)
+	if err != nil {
+		return nil, err
+	}
+
+	return body, nil
 }
