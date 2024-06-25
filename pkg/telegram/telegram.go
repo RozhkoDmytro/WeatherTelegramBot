@@ -1,6 +1,10 @@
 package telegram
 
 import (
+	"time"
+
+	"projecttelegrambot/pkg/holiday"
+
 	"git.foxminded.ua/foxstudent107249/telegrambot"
 )
 
@@ -60,7 +64,9 @@ var flagsCountryMap = map[string]string{
 	DefaultFlags[5]: "UA",
 }
 
-func CreateReplayMsg(chatId int, c string, bot *telegrambot.ApiTelegramBot) ([]byte, error) {
+func CreateReplayMsg(a ...any) ([]byte, error) {
+	chatId, c, bot, apiHolyday := a[0].(int), a[1].(string), a[2].(*telegrambot.ApiTelegramBot), a[3].(*holiday.ApiHoliday)
+
 	switch c {
 	case "/start":
 		return bot.CreateReplyKeyboard(chatId, c, DefualtKeyboard)
@@ -70,14 +76,12 @@ func CreateReplayMsg(chatId int, c string, bot *telegrambot.ApiTelegramBot) ([]b
 		} else if infoMap[c] != "" {
 			return bot.CreateReplayMsg(chatId, infoMap[c])
 		} else {
-			return bot.CreateReplayMsg(chatId, "Holiday")
-			/* 			// send API request and create text message with holidays
-			   			apiHoliday := holiday.NewApiHoliday(&http.Client{}, holiday.HolidayApiUrl, cfg.TokenHoliday)
-			   			text, err := bot.ApiHolyday.Names(flagsCountryMap[c], time.Now())
-			   			if err != nil {
-			   				return nil, err
-			   			}
-			   			return bot.CreateReplayMsg(chatID, text) */
+			// send API request and create text message with holidays
+			text, err := apiHolyday.Names(flagsCountryMap[c], time.Now())
+			if err != nil {
+				return nil, err
+			}
+			return bot.CreateReplayMsg(chatId, text)
 		}
 	}
 }

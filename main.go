@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"net/http"
 	"os"
 	"time"
 
 	"projecttelegrambot/pkg/config"
+	"projecttelegrambot/pkg/holiday"
 	"projecttelegrambot/pkg/telegram"
 
 	tgbotapi "git.foxminded.ua/foxstudent107249/telegrambot"
@@ -39,6 +41,8 @@ func main() {
 		return
 	}
 
+	apiHoliday := holiday.NewApiHoliday(&http.Client{}, holiday.HolidayApiUrl, cfg.TokenHoliday)
+
 	for {
 
 		// Get updates
@@ -55,7 +59,7 @@ func main() {
 		for _, update := range updates.Result {
 			// Create and send rescponse
 			fmt.Println(update.Message.Text)
-			body, err := bot.CreateResponseToCommand(update.Message.Chat.ID, update.Message.Text, telegram.CreateReplayMsg)
+			body, err := bot.CreateResponseToCommand(telegram.CreateReplayMsg, update.Message.Chat.ID, update.Message.Text, bot, apiHoliday)
 			if err != nil {
 				childLogger.Error("Failed to create send message: %v\n", err)
 				return
