@@ -7,8 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"projecttelegrambot/pkg/config"
-
 	"github.com/stretchr/testify/assert"
 )
 
@@ -35,12 +33,6 @@ func TestNames(t *testing.T) {
 		},
 	}
 
-	// Get config with env
-	cfg, err := config.Load()
-	if err != nil {
-		panic(err)
-	}
-
 	for name, tc := range testCases {
 		// Start a local HTTP server
 		server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
@@ -52,7 +44,7 @@ func TestNames(t *testing.T) {
 		defer server.Close()
 
 		// Use Client & URL from our local test server
-		api := NewApiHoliday(server.Client(), server.URL, cfg.TokenHoliday)
+		api := NewApiHoliday(server.Client(), server.URL, "")
 		holidays, err := api.Load("UA", time.Date(2024, 6, 24, 0, 0, 0, 0, time.UTC))
 		fmt.Println(err)
 		assert.Equal(t, tc.expected, fmt.Sprintf("%s", holidays), name)
@@ -71,8 +63,8 @@ func TestNames(t *testing.T) {
 	defer server.Close()
 
 	// Use Client & URL from our local test server
-	api := NewApiHoliday(server.Client(), server.URL, cfg.TokenHoliday)
-	_, err = api.Load("UA", time.Date(2024, 6, 24, 0, 0, 0, 0, time.UTC))
+	api := NewApiHoliday(server.Client(), server.URL, "")
+	_, err := api.Load("UA", time.Date(2024, 6, 24, 0, 0, 0, 0, time.UTC))
 
 	assert.Equal(t, true, err != nil, "Test error Unmarshaling")
 }
