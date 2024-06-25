@@ -4,12 +4,11 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
-	"net/http"
 	"os"
 	"time"
 
 	"projecttelegrambot/pkg/config"
-	"projecttelegrambot/pkg/holiday"
+	"projecttelegrambot/pkg/telegram"
 
 	tgbotapi "git.foxminded.ua/foxstudent107249/telegrambot"
 
@@ -33,10 +32,12 @@ func main() {
 		panic(err)
 	}
 
-	apiHoliday := holiday.NewApiHoliday(&http.Client{}, holiday.HolidayApiUrl, cfg.TokenHoliday)
-
 	// Create a new telegram bot
-	bot := tgbotapi.NewBot(cfg.Token, logger, apiHoliday)
+	bot, err := tgbotapi.NewBot(cfg.Token, logger)
+	if err != nil {
+		logger.Error("Failed to create telegram bot: %v\n", err)
+		return
+	}
 
 	for {
 
@@ -54,7 +55,7 @@ func main() {
 		for _, update := range updates.Result {
 			// Create and send rescponse
 			fmt.Println(update.Message.Text)
-			body, err := bot.CreateResponseToCommand(update.Message.Chat.ID, update.Message.Text)
+			body, err := bot.CreateResponseToCommand(update.Message.Chat.ID, update.Message.Text, telegram.CreateReplayMsg)
 			if err != nil {
 				childLogger.Error("Failed to create send message: %v\n", err)
 				return

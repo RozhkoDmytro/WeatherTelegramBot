@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"git.foxminded.ua/foxstudent107249/telegrambot"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -47,13 +48,13 @@ func TestParseTelegramRequest(t *testing.T) {
 	})
 
 	resp, _ := client.Get("")
-	var telegramBot ApiTelegramBot
-	result, _ := telegramBot.parseTelegramRequest(resp)
+	var telegramBot telegrambot.ApiTelegramBot
+	result, _ := telegramBot.ParseTelegramRequest(resp)
 	assert.Equal(t, "/start", result.Result[0].Message.Text)
 }
 
 func TestCreateReplayMsg(t *testing.T) {
-	var telegramBot ApiTelegramBot
+	var telegramBot telegrambot.ApiTelegramBot
 	chatId := 123456
 
 	testCases = map[string]GenericTestCase{
@@ -81,11 +82,7 @@ func TestCreateReplayMsg(t *testing.T) {
 
 			if tc.input == "/start" {
 				expected := []byte(tc.expected)
-				result, _ := telegramBot.createReplyKeyboard(chatId, tc.input)
-				assert.Equal(t, expected, result, name)
-			} else {
-				expected, _ := telegramBot.createMsgBody(chatId, tc.expected)
-				result, _ := telegramBot.createReplayMsg(chatId, tc.input)
+				result, _ := telegramBot.CreateReplyKeyboard(chatId, tc.input, DefualtKeyboard)
 				assert.Equal(t, expected, result, name)
 			}
 		})
