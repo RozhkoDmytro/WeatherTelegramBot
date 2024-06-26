@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
@@ -58,13 +57,7 @@ func main() {
 
 		for _, update := range updates.Result {
 			// Create and send rescponse
-			fmt.Println(update.Message.Text)
-			body, err := bot.CreateResponseToCommand(telegram.CreateReplayMsg, update.Message.Chat.ID, update.Message.Text, bot, apiHoliday)
-			if err != nil {
-				childLogger.Error("Failed to create send message: %v\n", err)
-				return
-			}
-			_, err = bot.Send(update.Message.Chat.ID, body)
+			_, err = telegram.CreateReplayMsg(bot, apiHoliday, &update)
 			if err != nil {
 				childLogger.Error("Failed to send message: %v\n", err)
 				return

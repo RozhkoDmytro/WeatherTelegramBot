@@ -64,8 +64,9 @@ var flagsCountryMap = map[string]string{
 	DefaultFlags[5]: "UA",
 }
 
-func CreateReplayMsg(a ...any) ([]byte, error) {
-	chatId, c, bot, apiHolyday := a[0].(int), a[1].(string), a[2].(*telegrambot.ApiTelegramBot), a[3].(*holiday.ApiHoliday)
+func CreateReplayMsg(bot *telegrambot.ApiTelegramBot, apiHolіday *holiday.ApiHoliday, update *telegrambot.Update) ([]byte, error) {
+	c := update.Message.Text
+	chatId := update.Message.Chat.ID
 
 	switch c {
 	case "/start":
@@ -77,7 +78,7 @@ func CreateReplayMsg(a ...any) ([]byte, error) {
 			return bot.CreateReplayMsg(chatId, infoMap[c])
 		} else {
 			// send API request and create text message with holidays
-			text, err := apiHolyday.Names(flagsCountryMap[c], time.Now())
+			text, err := apiHolіday.Names(flagsCountryMap[c], time.Now())
 			if err != nil {
 				return nil, err
 			}
