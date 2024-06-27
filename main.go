@@ -3,11 +3,15 @@ package main
 import (
 	"io"
 	"log/slog"
+	"net/http"
 	"os"
 	"time"
 
-	"projecttelegrambot/pkg/bot"
 	"projecttelegrambot/pkg/config"
+	"projecttelegrambot/pkg/holiday"
+	"projecttelegrambot/pkg/telegram"
+
+	tgbotapi "git.foxminded.ua/foxstudent107249/telegrambot"
 
 	"github.com/google/uuid"
 )
@@ -30,12 +34,18 @@ func main() {
 	}
 
 	// Create a new telegram bot
-	telegramBot := bot.NewBot(cfg.Token, logger)
+	bot, err := tgbotapi.NewBot(cfg.Token, logger)
+	if err != nil {
+		logger.Error("Failed to create telegram bot: %v\n", err)
+		return
+	}
+
+	apiHoliday := holiday.NewApiHoliday(&http.Client{}, holiday.HolidayApiUrl, cfg.TokenHoliday)
 
 	for {
 
 		// Get updates
-		updates, err := telegramBot.GetUpdates()
+		updates, err := bot.GetUpdates()
 		if err != nil {
 			logger.Error("Failed to get updates: %v\n", err)
 			return
@@ -43,17 +53,16 @@ func main() {
 
 		// set UUID for this request for this child logger
 		childLogger := logger.With(slog.String("UUID", uuid.New().String()))
-		telegramBot.Logger = childLogger
+		bot.Logger = childLogger
 
 		for _, update := range updates.Result {
 			// Create and send rescponse
-			msg := telegramBot.CreateResponseToCommand(update.Message.Text)
-			_, err := telegramBot.Send(update.Message.Chat.ID, msg)
+			_, err = telegram.CreateReplayMsg(bot, apiHoliday, &update)
 			if err != nil {
 				childLogger.Error("Failed to send message: %v\n", err)
 				return
 			}
-			telegramBot.Offset = update.UpdateID + 1
+			bot.Offset = update.UpdateID + 1
 		}
 
 		// Sleep for a bit before polling again
