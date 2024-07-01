@@ -43,30 +43,34 @@ func main() {
 	apiHoliday := holiday.NewApiHoliday(&http.Client{}, holiday.HolidayApiUrl, cfg.TokenHoliday)
 
 	for {
-
 		// Get updates
-		updates, err := bot.GetUpdates()
-		if err != nil {
-			logger.Error("Failed to get updates: %v\n", err)
-			return
-		}
-
-		// set UUID for this request for this child logger
-		childLogger := logger.With(slog.String("UUID", uuid.New().String()))
-		bot.Logger = childLogger
-
-		for _, update := range updates.Result {
-			// Create and send rescponse
-			_, err = telegram.CreateReplayMsg(bot, apiHoliday, &update)
-			if err != nil {
-				childLogger.Error("Failed to send message: %v\n", err)
-				return
-			}
-			bot.Offset = update.UpdateID + 1
-		}
+		update(bot, apiHoliday)
 
 		// Sleep for a bit before polling again
 		time.Sleep(defualtTimeout * time.Second)
+	}
+}
+
+func update(bot *tgbotapi.ApiTelegramBot, apiHoliday *holiday.ApiHoliday) {
+	// Get updates
+	updates, err := bot.GetUpdates()
+	if err != nil {
+		bot.Logger.Error("Failed to get updates: %v\n", err)
+		return
+	}
+
+	// set UUID for this request for this child logger
+	childLogger := bot.Logger.With(slog.String("UUID", uuid.New().String()))
+	bot.Logger = childLogger
+
+	for _, update := range updates.Result {
+		// Create and send rescponse
+		_, err = telegram.CreateReplayMsg(bot, apiHoliday, &update)
+		if err != nil {
+			childLogger.Error("Failed to send message: %v\n", err)
+			return
+		}
+		bot.Offset = update.UpdateID + 1
 	}
 }
 
