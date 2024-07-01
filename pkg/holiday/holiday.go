@@ -11,9 +11,9 @@ import (
 const HolidayApiUrl = "https://holidays.abstractapi.com/v1/"
 
 type ApiHoliday struct {
-	Client  *http.Client
+	client  *http.Client
 	baseURL string
-	Token   string
+	token   string
 }
 
 // Define a struct to hold the holiday data
@@ -34,9 +34,9 @@ type Holiday struct {
 
 func NewApiHoliday(client *http.Client, url string, t string) *ApiHoliday {
 	result := ApiHoliday{
-		Token:   t,
+		token:   t,
 		baseURL: url,
-		Client:  client,
+		client:  client,
 	}
 	return &result
 }
@@ -44,7 +44,7 @@ func NewApiHoliday(client *http.Client, url string, t string) *ApiHoliday {
 func (api *ApiHoliday) Load(country string, day time.Time) ([]Holiday, error) {
 	url := fmt.Sprintf(api.baseURL+"?api_key=%s&country=%s&year=%d&month=%d&day=%d", api.Token, country, day.Year(), day.Month(), day.Day())
 
-	resp, err := api.Client.Get(url)
+	resp, err := api.client.Get(url)
 	if err != nil {
 		return nil, err
 	}
@@ -53,13 +53,11 @@ func (api *ApiHoliday) Load(country string, day time.Time) ([]Holiday, error) {
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println(string(body))
+
 	var holidays []Holiday
 	if err := json.Unmarshal(body, &holidays); err != nil {
 		return nil, err
 	}
-
-	fmt.Println(holidays)
 
 	return holidays, nil
 }
