@@ -42,7 +42,7 @@ func NewApiHoliday(client *http.Client, url string, t string) *ApiHoliday {
 }
 
 func (api *ApiHoliday) Load(country string, day time.Time) ([]Holiday, error) {
-	url := fmt.Sprintf(api.baseURL+"?api_key=%s&country=%s&year=%d&month=%d&day=%d", api.Token, country, day.Year(), day.Month(), day.Day())
+	url := fmt.Sprintf(api.baseURL+"?api_key=%s&country=%s&year=%d&month=%d&day=%d", api.token, country, day.Year(), day.Month(), day.Day())
 
 	resp, err := api.client.Get(url)
 	if err != nil {
