@@ -20,6 +20,12 @@ const (
 	defualtTimeout = 2 // in seconds
 )
 
+var (
+	bot        *tgbotapi.ApiTelegramBot
+	apiHoliday *holiday.ApiHoliday
+	logger     *slog.Logger
+)
+
 func main() {
 	// Get config with env
 	cfg, err := config.Load()
@@ -28,30 +34,30 @@ func main() {
 	}
 
 	// Create logger
-	logger, err := createLogger(cfg.NameLog)
+	logger, err = createLogger(cfg.NameLog)
 	if err != nil {
 		panic(err)
 	}
 
 	// Create a new telegram bot
-	bot, err := tgbotapi.NewBot(cfg.Token, logger)
+	bot, err = tgbotapi.NewBot(cfg.Token, logger)
 	if err != nil {
 		logger.Error("Failed to create telegram bot: %v\n", err)
 		return
 	}
 
-	apiHoliday := holiday.NewApiHoliday(&http.Client{}, holiday.HolidayApiUrl, cfg.TokenHoliday)
+	apiHoliday = holiday.NewApiHoliday(&http.Client{}, holiday.HolidayApiUrl, cfg.TokenHoliday)
 
 	for {
 		// Get updates
-		update(bot, apiHoliday)
+		update()
 
 		// Sleep for a bit before polling again
 		time.Sleep(defualtTimeout * time.Second)
 	}
 }
 
-func update(bot *tgbotapi.ApiTelegramBot, apiHoliday *holiday.ApiHoliday) {
+func update() {
 	// Get updates
 	updates, err := bot.GetUpdates()
 	if err != nil {
@@ -60,7 +66,7 @@ func update(bot *tgbotapi.ApiTelegramBot, apiHoliday *holiday.ApiHoliday) {
 	}
 
 	// set UUID for this request for this child logger
-	childLogger := bot.Logger.With(slog.String("UUID", uuid.New().String()))
+	childLogger := logger.With(slog.String("UUID", uuid.New().String()))
 	bot.Logger = childLogger
 
 	for _, update := range updates.Result {
