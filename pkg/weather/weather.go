@@ -1,11 +1,14 @@
 package weather
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"io"
 	"net/http"
-	"time"
+	"strconv"
+	"strings"
 )
 
 const WeatherApiUrl = "https://api.openweathermap.org/data/2.5/"
@@ -73,7 +76,7 @@ type Sys struct {
 	Sunset  int64   `json:"sunset"`
 }
 
-func NewApiHoliday(client *http.Client, url string, t string) *ApiWeather {
+func NewApiWeather(client *http.Client, url string, t string) *ApiWeather {
 	result := ApiWeather{
 		token:   t,
 		baseURL: url,
@@ -82,39 +85,78 @@ func NewApiHoliday(client *http.Client, url string, t string) *ApiWeather {
 	return &result
 }
 
-func (api *ApiWeather) Load(country string, day time.Time) ([]WeatherResponse, error) {
-	url := fmt.Sprintf(api.baseURL+"weather?lat={%s}&lon={%s}&appid={%s}", country, day.Year(), day.Month(), day.Day(), api.token)
-
+func (api *ApiWeather) Load(latitude, longitude float64) (*WeatherResponse, error) {
+	url := fmt.Sprintf(api.baseURL+"weather?lat=%s&lon=%s&appid=%s", strconv.FormatFloat(latitude, 'f', 6, 64), strconv.FormatFloat(longitude, 'f', 6, 64), api.token)
+	fmt.Println(url)
 	resp, err := api.client.Get(url)
 	if err != nil {
-		return nil, err
+		return &WeatherResponse{}, err
 	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, err
+		return &WeatherResponse{}, err
 	}
 
-	var holidays []WeatherResponse
-	if err := json.Unmarshal(body, &holidays); err != nil {
-		return nil, err
+	var w WeatherResponse
+	if err := json.Unmarshal(body, &w); err != nil {
+		return &WeatherResponse{}, err
 	}
 
-	return holidays, nil
+	return &w, nil
 }
 
-func (api *ApiWeather) CreateWeatherDescription(country string, day time.Time) (string, error) {
-	holydays, err := api.Load(country, day)
+func (api *ApiWeather) Description(resp *WeatherResponse) string {
+	text := formatWeatherResponse(resp)
+
+	return text
+}
+
+func FormatWeatherResponse2(weatherResponse *WeatherResponse) string {
+	const weatherTemplate = `*Current weather* in {{.Name}}:
+<b>*Temperature*:</b> {{.Main.Temp}}°C
+<b>Pressure:</b> {{.Main.Pressure}} hPa
+<b>Humidity:</b> {{.Main.Humidity}}%
+<b>Description:</b> {{(index .Weather 0).Description}}`
+
+	tmpl, err := template.New("weather").Parse(weatherTemplate)
 	if err != nil {
-		return "", err
-	}
-	text := ""
-	for _, h := range holydays {
-		text += h.Name
+		return ""
 	}
 
-	if text == "" {
-		text = "There are no holidays in this country today, so sad !"
+	var buf bytes.Buffer
+	writer := io.Writer(&buf)
+	err = tmpl.Execute(writer, weatherResponse)
+	if err != nil {
+		return ""
 	}
-	return text, nil
+
+	return buf.String()
+}
+
+// formatWeatherResponse formats the weather data with MarkdownV2
+func formatWeatherResponse(weatherResponse *WeatherResponse) string {
+	return fmt.Sprintf(
+		"*Current weather in %s:*\n"+
+			"Temperature: %.2f°C\n"+
+			"Pressure: %d hPa\n"+
+			"Humidity: %d%%\n"+
+			"Description: %s",
+		weatherResponse.Name,
+		weatherResponse.Main.Temp,
+		weatherResponse.Main.Pressure,
+		weatherResponse.Main.Humidity,
+		escapeMarkdownV2(weatherResponse.Weather[0].Description),
+	)
+}
+
+func escapeMarkdownV2(text string) string {
+	replacer := strings.NewReplacer(
+		"_", "\\_", "*", "\\*", "[", "\\[", "]", "\\]", "(",
+		"\\(", ")", "\\)", "~", "\\~", "`", "\\`", ">", "\\>",
+		"#", "\\#", "+", "\\+", "-", "\\-", "=", "\\=", "|",
+		"\\|", "{", "\\{", "}", "\\}", ".", "\\.", "!", "\\!",
+	)
+
+	return replacer.Replace(text)
 }
