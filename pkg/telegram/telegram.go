@@ -92,7 +92,7 @@ func NewMyTelegramApp(cfg *config.Config, bot *telegrambot.ApiTelegramBot, apiHo
 func (c *MyApp) SendResponse(update *telegrambot.Update) error {
 	command := update.Message.Text
 	chatId := update.Message.Chat.ID
-	fmt.Println(command)
+
 	if command == "" {
 		geotxt := "Latitude: " + strconv.FormatFloat(update.Message.Location.Latitude, 'f', 6, 64) +
 			"\nLongitude: " + strconv.FormatFloat(update.Message.Location.Longitude, 'f', 6, 64)
@@ -106,7 +106,7 @@ func (c *MyApp) SendResponse(update *telegrambot.Update) error {
 	case "/weather":
 		_, err := c.bot.CreateReplyKeyboard(chatId, "Pls, get location", DefualtKeyboardGeolacation)
 		return err
-	case "/weatherGeo":
+	case "Give Your location":
 
 		geotxt := "Latitude: " + strconv.FormatFloat(update.Message.Location.Latitude, 'f', 6, 64) +
 			"\nLongitude: " + strconv.FormatFloat(update.Message.Location.Longitude, 'f', 6, 64)
