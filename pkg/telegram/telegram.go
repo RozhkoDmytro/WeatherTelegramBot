@@ -1,8 +1,10 @@
 package telegram
 
 import (
+	"log/slog"
 	"time"
 
+	"projecttelegrambot/pkg/config"
 	"projecttelegrambot/pkg/holiday"
 
 	"git.foxminded.ua/foxstudent107249/telegrambot"
@@ -21,6 +23,12 @@ https://www.linkedin.com/in/dmytro-rozhko-bas-1c-golang-junior/
 https://animated-panda-0382af.netlify.app/
 	`
 )
+
+type MyApp struct {
+	bot        *telegrambot.ApiTelegramBot
+	apiHoliday *holiday.ApiHoliday
+	config     *config.Config
+}
 
 var infoMap = map[string]string{
 	"/start": DefaultHelpStartInfo,
@@ -64,25 +72,37 @@ var flagsCountryMap = map[string]string{
 	DefaultFlags[5]: "UA",
 }
 
-func CreateReplayMsg(bot *telegrambot.ApiTelegramBot, apiHolіday *holiday.ApiHoliday, update *telegrambot.Update) ([]byte, error) {
-	c := update.Message.Text
+func NewMyTelegramApp(cfg *config.Config, bot *telegrambot.ApiTelegramBot, apiHoliday *holiday.ApiHoliday) (*MyApp, error) {
+	return &MyApp{bot: bot, apiHoliday: apiHoliday, config: cfg}, nil
+}
+
+func (c *MyApp) SendResponse(update *telegrambot.Update) error {
+	command := update.Message.Text
 	chatId := update.Message.Chat.ID
 
-	switch c {
+	switch command {
 	case "/start":
-		return bot.CreateReplyKeyboard(chatId, c, DefualtKeyboard)
+		_, err := c.bot.CreateReplyKeyboard(chatId, command, DefualtKeyboard)
+		return err
 	default:
-		if infoMap[c] == "" && flagsCountryMap[c] == "" {
-			return bot.CreateReplayMsg(chatId, "")
-		} else if infoMap[c] != "" {
-			return bot.CreateReplayMsg(chatId, infoMap[c])
+		if infoMap[command] == "" && flagsCountryMap[command] == "" {
+			_, err := c.bot.CreateReplayMsg(chatId, "")
+			return err
+		} else if infoMap[command] != "" {
+			_, err := c.bot.CreateReplayMsg(chatId, infoMap[command])
+			return err
 		} else {
 			// send API request and create text message with holidays
-			text, err := apiHolіday.Names(flagsCountryMap[c], time.Now())
+			text, err := c.apiHoliday.Names(flagsCountryMap[command], time.Now())
 			if err != nil {
-				return nil, err
+				return err
 			}
-			return bot.CreateReplayMsg(chatId, text)
+			_, err = c.bot.CreateReplayMsg(chatId, text)
+			return err
 		}
 	}
+}
+
+func (c *MyApp) SetLogger(l *slog.Logger) {
+	c.bot.Logger = l
 }

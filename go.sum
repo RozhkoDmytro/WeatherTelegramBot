@@ -1,11 +1,5 @@
-git.foxminded.ua/foxstudent107249/telegrambot v0.0.0-20240625182914-24d7c1e5104b h1:Ebk+Ec6KtObIyCVpIw/7rf1gk3oIoNLNuNUiiGuFoKM=
-git.foxminded.ua/foxstudent107249/telegrambot v0.0.0-20240625182914-24d7c1e5104b/go.mod h1:Y6EO7KMMdK1Jg48ZZHxEMOoIcsKYre+vtnXSaeaeOtM=
-git.foxminded.ua/foxstudent107249/telegrambot v0.0.0-20240625193417-344081b1fc46 h1:s1tKPoja0P5QFt7OG0ZuRpTsC7LTjU6RE9ex6kglH1Q=
-git.foxminded.ua/foxstudent107249/telegrambot v0.0.0-20240625193417-344081b1fc46/go.mod h1:Y6EO7KMMdK1Jg48ZZHxEMOoIcsKYre+vtnXSaeaeOtM=
-git.foxminded.ua/foxstudent107249/telegrambot v0.0.0-20240625195939-ac56ead10fd4 h1:FOzqkWc4jJJWsHkR8MBBtPYCYzlYzgauLzjhMxAot+8=
-git.foxminded.ua/foxstudent107249/telegrambot v0.0.0-20240625195939-ac56ead10fd4/go.mod h1:Y6EO7KMMdK1Jg48ZZHxEMOoIcsKYre+vtnXSaeaeOtM=
-git.foxminded.ua/foxstudent107249/telegrambot v0.0.0-20240626121215-f6f399712635 h1:cxB8nQPMQa+W4Hnn/LLRSENoLzKMHVbwNMllN8ia4Ao=
-git.foxminded.ua/foxstudent107249/telegrambot v0.0.0-20240626121215-f6f399712635/go.mod h1:Y6EO7KMMdK1Jg48ZZHxEMOoIcsKYre+vtnXSaeaeOtM=
+git.foxminded.ua/foxstudent107249/telegrambot v0.0.0-20240708160330-ce4114791026 h1:LoI+iRrlYSuMIGAl7q2Yh+U/A4qVHhY554lEDp5AXYA=
+git.foxminded.ua/foxstudent107249/telegrambot v0.0.0-20240708160330-ce4114791026/go.mod h1:oFmKgGHwyTfKkHHmRjELpGLfZED2xjoopo2K2WlTPvk=
 github.com/caarlos0/env v3.5.0+incompatible h1:Yy0UN8o9Wtr/jGHZDpCBLpNrzcFLLM2yixi/rBrKyJs=
 github.com/caarlos0/env v3.5.0+incompatible/go.mod h1:tdCsowwCzMLdkqRYDlHpZCp2UooDD3MspDBjZ2AD02Y=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=

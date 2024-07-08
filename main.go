@@ -5,15 +5,12 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
-	"time"
 
 	"projecttelegrambot/pkg/config"
 	"projecttelegrambot/pkg/holiday"
 	"projecttelegrambot/pkg/telegram"
 
-	tgbotapi "git.foxminded.ua/foxstudent107249/telegrambot"
-
-	"github.com/google/uuid"
+	"git.foxminded.ua/foxstudent107249/telegrambot"
 )
 
 const (
@@ -34,40 +31,19 @@ func main() {
 	}
 
 	// Create a new telegram bot
-	bot, err := tgbotapi.NewBot(cfg.Token, logger)
+	bot, err := telegrambot.NewBot(cfg.Token, logger)
 	if err != nil {
-		logger.Error("Failed to create telegram bot: %v\n", err)
-		return
+		panic(err)
 	}
-
 	apiHoliday := holiday.NewApiHoliday(&http.Client{}, holiday.HolidayApiUrl, cfg.TokenHoliday)
 
-	for {
-
-		// Get updates
-		updates, err := bot.GetUpdates()
-		if err != nil {
-			logger.Error("Failed to get updates: %v\n", err)
-			return
-		}
-
-		// set UUID for this request for this child logger
-		childLogger := logger.With(slog.String("UUID", uuid.New().String()))
-		bot.Logger = childLogger
-
-		for _, update := range updates.Result {
-			// Create and send rescponse
-			_, err = telegram.CreateReplayMsg(bot, apiHoliday, &update)
-			if err != nil {
-				childLogger.Error("Failed to send message: %v\n", err)
-				return
-			}
-			bot.Offset = update.UpdateID + 1
-		}
-
-		// Sleep for a bit before polling again
-		time.Sleep(defualtTimeout * time.Second)
+	// create all background in one struct
+	telegramApp, err := telegram.NewMyTelegramApp(&cfg, bot, apiHoliday)
+	if err != nil {
+		panic(err)
 	}
+
+	bot.ListenAndServe(defualtTimeout, telegramApp.SendResponse)
 }
 
 // Create logger and set fields
