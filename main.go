@@ -40,8 +40,8 @@ func main() {
 	apiWeather := weather.NewApiWeather(&http.Client{}, weather.WeatherApiUrl, cfg.TokenWeather)
 
 	// create all background in one struct
-	telegramApp := telegram.NewMyTelegramApp(&cfg, apiTelegram, apiHoliday, apiWeather)
-	apiTelegram.ListenAndServe(defualtTimeout, telegramApp.SendResponse)
+	telegramSrv := telegram.NewMyTelegramApp(apiTelegram, apiHoliday, apiWeather)
+	apiTelegram.ListenAndServe(defualtTimeout, telegramSrv.SendResponse)
 }
 
 // Create logger and set fields

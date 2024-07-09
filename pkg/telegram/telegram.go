@@ -4,7 +4,6 @@ import (
 	"strconv"
 	"time"
 
-	"projecttelegrambot/pkg/config"
 	"projecttelegrambot/pkg/holiday"
 	"projecttelegrambot/pkg/weather"
 
@@ -26,7 +25,6 @@ https://animated-panda-0382af.netlify.app/
 )
 
 type TelegramService struct {
-	config      *config.Config
 	apiTelegram *telegrambot.ApiTelegramBot
 	apiHoliday  *holiday.ApiHoliday
 	apiWeather  *weather.ApiWeather
@@ -84,8 +82,8 @@ var flagsCountryMap = map[string]string{
 	DefaultFlags[5]: "UA",
 }
 
-func NewMyTelegramApp(cfg *config.Config, apiTelegram *telegrambot.ApiTelegramBot, apiHoliday *holiday.ApiHoliday, apiWeather *weather.ApiWeather) *TelegramService {
-	return &TelegramService{config: cfg, apiTelegram: apiTelegram, apiHoliday: apiHoliday, apiWeather: apiWeather}
+func NewMyTelegramApp(apiTelegram *telegrambot.ApiTelegramBot, apiHoliday *holiday.ApiHoliday, apiWeather *weather.ApiWeather) *TelegramService {
+	return &TelegramService{apiTelegram: apiTelegram, apiHoliday: apiHoliday, apiWeather: apiWeather}
 }
 
 func (c *TelegramService) SendResponse(update *telegrambot.Update) error {
