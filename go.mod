@@ -3,7 +3,7 @@ module projecttelegrambot
 go 1.22.2
 
 require (
-	git.foxminded.ua/foxstudent107249/telegrambot v0.0.0-20240708172134-7408acec8cd6
+	git.foxminded.ua/foxstudent107249/telegrambot v0.0.0-20240709091858-7255aaddc1c1
 	github.com/caarlos0/env v3.5.0+incompatible
 	github.com/joho/godotenv v1.5.1
 	github.com/stretchr/testify v1.9.0

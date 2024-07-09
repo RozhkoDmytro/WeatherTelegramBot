@@ -35,7 +35,7 @@ func TestDescription(t *testing.T) {
 
 	latitude, longitude := geoDebuglocation()
 	resp, _ := api.Load(latitude, longitude)
-	api.Description(resp)
+	resp.Description()
 	assert.Equal(t, "", "")
 }
 

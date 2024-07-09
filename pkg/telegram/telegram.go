@@ -1,7 +1,10 @@
 package telegram
 
 import (
+	"fmt"
+	"reflect"
 	"strconv"
+	"strings"
 	"time"
 
 	"projecttelegrambot/pkg/holiday"
@@ -86,10 +89,28 @@ func NewMyTelegramService(apiTelegram *telegrambot.ApiTelegramBot, apiHoliday *h
 	return &TelegramService{apiTelegram: apiTelegram, apiHoliday: apiHoliday, apiWeather: apiWeather}
 }
 
+func StructToString(v interface{}) string {
+	val := reflect.ValueOf(v)
+	if val.Kind() == reflect.Ptr {
+		val = val.Elem()
+	}
+
+	typeOfS := val.Type()
+	var result strings.Builder
+
+	for i := 0; i < val.NumField(); i++ {
+		fieldName := typeOfS.Field(i).Name
+		fieldValue := val.Field(i).Interface()
+		result.WriteString(fmt.Sprintf("%s: %v\n", fieldName, fieldValue))
+	}
+
+	return result.String()
+}
+
 func (c *TelegramService) SendResponse(update *telegrambot.Update) error {
 	command := update.Message.Text
 	chatId := update.Message.Chat.ID
-
+	fmt.Println("------------", StructToString(update))
 	/* 	if command == "" {
 		geotxt := "Latitude: " + strconv.FormatFloat(update.Message.Location.Latitude, 'f', 6, 64) +
 			"\nLongitude: " + strconv.FormatFloat(update.Message.Location.Longitude, 'f', 6, 64)
