@@ -22,6 +22,7 @@ const (
 https://www.linkedin.com/in/dmytro-rozhko-bas-1c-golang-junior/
 https://animated-panda-0382af.netlify.app/
 	`
+	CurrentParseMode = telegrambot.ModeMarkdownV2
 )
 
 type TelegramService struct {
@@ -102,12 +103,12 @@ func (c *TelegramService) SendResponse(update *telegrambot.Update) error {
 	default:
 		// Unknown
 		if isUnknownCommand(update) {
-			_, err := c.apiTelegram.CreateReplayMsg(chatId, "")
+			_, err := c.apiTelegram.CreateReplayMsg(chatId, "", CurrentParseMode)
 			return err
 		}
 		// standart command
 		if infoMap[command] != "" {
-			_, err := c.apiTelegram.CreateReplayMsg(chatId, infoMap[command])
+			_, err := c.apiTelegram.CreateReplayMsg(chatId, infoMap[command], CurrentParseMode)
 			return err
 		}
 		// responce with country value
@@ -117,7 +118,7 @@ func (c *TelegramService) SendResponse(update *telegrambot.Update) error {
 			if err != nil {
 				return err
 			}
-			_, err = c.apiTelegram.CreateReplayMsg(chatId, text)
+			_, err = c.apiTelegram.CreateReplayMsg(chatId, text, CurrentParseMode)
 			return err
 		}
 		// responce with fill Location
@@ -126,9 +127,10 @@ func (c *TelegramService) SendResponse(update *telegrambot.Update) error {
 			if err != nil {
 				return err
 			}
-
+			// fmt.Println(resp.Description())
 			geotxt := resp.Description()
-			_, err = c.apiTelegram.CreateReplayMsg(chatId, geotxt)
+			// fmt.Println(geotxt)
+			_, err = c.apiTelegram.CreateReplayMsg(chatId, geotxt, CurrentParseMode)
 			return err
 		}
 	}

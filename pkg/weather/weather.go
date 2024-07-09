@@ -4,10 +4,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"html/template"
 	"io"
 	"net/http"
 	"strconv"
+	"text/template"
 )
 
 const WeatherApiUrl = "https://api.openweathermap.org/data/2.5/"
@@ -110,10 +110,10 @@ func (resp *WeatherResponse) Description() string {
 
 func formatWeatherResponse(weatherResponse *WeatherResponse) string {
 	const weatherTemplate = `*Current weather* in {{.Name}}:
-*Temperature*:</b> {{.Main.Temp}}°C
-Pressure:</b> {{.Main.Pressure}} hPa
-Humidity:</b> {{.Main.Humidity}}%
-Description:</b> {{(index .Weather 0).Description}}`
+*Temperature*: {{.Main.Temp}}°C
+_Pressure:_ {{.Main.Pressure}} hPa
+_Humidity:_ {{.Main.Humidity}}%
+_Description:_ {{(index .Weather 0).Description}}`
 
 	tmpl, err := template.New("weather").Parse(weatherTemplate)
 	if err != nil {
@@ -129,3 +129,27 @@ Description:</b> {{(index .Weather 0).Description}}`
 
 	return buf.String()
 }
+
+/* // formatWeatherResponse formats the weather data with HTML using template
+func formatWeatherResponse(weatherResponse *WeatherResponse) string {
+	/* 	const weatherTemplate = `
+	<b>Current weather in {{.Name}}:</b>
+	Temperature: {{.Main.Temp}}°C
+	Pressure: {{.Main.Pressure}} hPa
+	Humidity: {{.Main.Humidity}}%
+	Description: {{(index .Weather 0).Description}}
+	`
+		tmpl, err := template.New("weather").Parse(weatherTemplate)
+		if err != nil {
+			return "error parse " + err.Error()
+		}
+
+		var formatted bytes.Buffer
+		err = tmpl.Execute(&formatted, weatherResponse)
+		if err != nil {
+			return "error execute " + err.Error()
+		}
+
+	const weatherTemplate = "<b>Current weather in AAAAAA:</b>"
+	return weatherTemplate
+} */
