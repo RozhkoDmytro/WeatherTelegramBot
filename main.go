@@ -31,7 +31,7 @@ func main() {
 		panic(err)
 	}
 
-	// Create a new telegram bot
+	// Create a all new APIs
 	apiTelegram, err := telegrambot.NewBot(cfg.Token, logger)
 	if err != nil {
 		panic(err)
@@ -40,7 +40,9 @@ func main() {
 	apiWeather := weather.NewApiWeather(&http.Client{}, weather.WeatherApiUrl, cfg.TokenWeather)
 
 	// create all background in one struct
-	telegramSrv := telegram.NewMyTelegramApp(apiTelegram, apiHoliday, apiWeather)
+	telegramSrv := telegram.NewMyTelegramService(apiTelegram, apiHoliday, apiWeather)
+
+	// Start process listnen and after-serving responce
 	apiTelegram.ListenAndServe(defualtTimeout, telegramSrv.SendResponse)
 }
 
