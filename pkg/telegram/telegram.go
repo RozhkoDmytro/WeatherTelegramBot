@@ -1,10 +1,7 @@
 package telegram
 
 import (
-	"fmt"
 	"reflect"
-	"strconv"
-	"strings"
 	"time"
 
 	"projecttelegrambot/pkg/holiday"
@@ -89,33 +86,10 @@ func NewMyTelegramService(apiTelegram *telegrambot.ApiTelegramBot, apiHoliday *h
 	return &TelegramService{apiTelegram: apiTelegram, apiHoliday: apiHoliday, apiWeather: apiWeather}
 }
 
-func StructToString(v interface{}) string {
-	val := reflect.ValueOf(v)
-	if val.Kind() == reflect.Ptr {
-		val = val.Elem()
-	}
-
-	typeOfS := val.Type()
-	var result strings.Builder
-
-	for i := 0; i < val.NumField(); i++ {
-		fieldName := typeOfS.Field(i).Name
-		fieldValue := val.Field(i).Interface()
-		result.WriteString(fmt.Sprintf("%s: %v\n", fieldName, fieldValue))
-	}
-
-	return result.String()
-}
-
 func (c *TelegramService) SendResponse(update *telegrambot.Update) error {
 	command := update.Message.Text
 	chatId := update.Message.Chat.ID
-	fmt.Println("------------", StructToString(update))
-	/* 	if command == "" {
-		geotxt := "Latitude: " + strconv.FormatFloat(update.Message.Location.Latitude, 'f', 6, 64) +
-			"\nLongitude: " + strconv.FormatFloat(update.Message.Location.Longitude, 'f', 6, 64)
-		fmt.Println(geotxt)
-	} */
+
 	switch command {
 	case "/start":
 		_, err := c.apiTelegram.CreateReplyKeyboard(chatId, command, DefualtKeyboard)
@@ -124,30 +98,20 @@ func (c *TelegramService) SendResponse(update *telegrambot.Update) error {
 	case "/weather":
 		_, err := c.apiTelegram.CreateReplyKeyboard(chatId, "Pls, get location", DefualtKeyboardGeolacation)
 		return err
-	case "Give Your location":
 
-		geotxt := "Latitude: " + strconv.FormatFloat(update.Message.Location.Latitude, 'f', 6, 64) +
-			"\nLongitude: " + strconv.FormatFloat(update.Message.Location.Longitude, 'f', 6, 64)
-
-		/*
-			resp, err := c.apiWeather.Load(lat, lon)
-			if err != nil {
-				return err
-			}
-			text := c.apiWeather.Description(resp)
-			_, err = c.bot.CreateReplayMsg(chatId, text)
-			return err */
-
-		_, err := c.apiTelegram.CreateReplayMsg(chatId, geotxt)
-		return err
 	default:
-		if infoMap[command] == "" && flagsCountryMap[command] == "" {
+		// Unknown
+		if isUnknownCommand(update) {
 			_, err := c.apiTelegram.CreateReplayMsg(chatId, "")
 			return err
-		} else if infoMap[command] != "" {
+		}
+		// standart command
+		if infoMap[command] != "" {
 			_, err := c.apiTelegram.CreateReplayMsg(chatId, infoMap[command])
 			return err
-		} else {
+		}
+		// responce with country value
+		if flagsCountryMap[command] != "" {
 			// send API request and create text message with holidays
 			text, err := c.apiHoliday.Names(flagsCountryMap[command], time.Now())
 			if err != nil {
@@ -156,17 +120,34 @@ func (c *TelegramService) SendResponse(update *telegrambot.Update) error {
 			_, err = c.apiTelegram.CreateReplayMsg(chatId, text)
 			return err
 		}
+		// responce with fill Location
+		if hasField(update.Message, "Location") {
+			resp, err := c.apiWeather.Load(update.Message.Location.Latitude, update.Message.Location.Longitude)
+			if err != nil {
+				return err
+			}
+
+			geotxt := resp.Description()
+			_, err = c.apiTelegram.CreateReplayMsg(chatId, geotxt)
+			return err
+		}
 	}
+	return nil
 }
 
-/* func (c *TelegramService) getGeolocation(chatId int) (float64, float64) {
-	// This is a mock function. Replace with actual geolocation fetching logic.
-	latitude := 50.4501  // Example latitude (Kyiv)
-	longitude := 30.5234 // Example longitude (Kyiv)
+func isUnknownCommand(update *telegrambot.Update) bool {
+	command := update.Message.Text
+	return infoMap[command] == "" && flagsCountryMap[command] == "" && !hasField(update.Message, "Location")
+}
 
-	if !c.apiTelegram.Debug {
-		c.apiTelegram.CreateReplyKeyboard(chatId, "/weatherGeo", DefualtKeyboardGeolacation)
+func hasField(obj interface{}, fieldName string) bool {
+	val := reflect.ValueOf(obj)
+	if val.Kind() == reflect.Ptr {
+		val = val.Elem()
 	}
-
-	return latitude, longitude
-} */
+	if val.Kind() != reflect.Struct {
+		return false
+	}
+	field := val.FieldByName(fieldName)
+	return field.IsValid()
+}

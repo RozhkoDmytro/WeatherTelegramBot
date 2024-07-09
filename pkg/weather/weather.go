@@ -8,7 +8,6 @@ import (
 	"io"
 	"net/http"
 	"strconv"
-	"strings"
 )
 
 const WeatherApiUrl = "https://api.openweathermap.org/data/2.5/"
@@ -109,12 +108,12 @@ func (resp *WeatherResponse) Description() string {
 	return formatWeatherResponse(resp)
 }
 
-func FormatWeatherResponse2(weatherResponse *WeatherResponse) string {
+func formatWeatherResponse(weatherResponse *WeatherResponse) string {
 	const weatherTemplate = `*Current weather* in {{.Name}}:
-<b>*Temperature*:</b> {{.Main.Temp}}°C
-<b>Pressure:</b> {{.Main.Pressure}} hPa
-<b>Humidity:</b> {{.Main.Humidity}}%
-<b>Description:</b> {{(index .Weather 0).Description}}`
+*Temperature*:</b> {{.Main.Temp}}°C
+Pressure:</b> {{.Main.Pressure}} hPa
+Humidity:</b> {{.Main.Humidity}}%
+Description:</b> {{(index .Weather 0).Description}}`
 
 	tmpl, err := template.New("weather").Parse(weatherTemplate)
 	if err != nil {
@@ -129,31 +128,4 @@ func FormatWeatherResponse2(weatherResponse *WeatherResponse) string {
 	}
 
 	return buf.String()
-}
-
-// formatWeatherResponse formats the weather data with MarkdownV2
-func formatWeatherResponse(weatherResponse *WeatherResponse) string {
-	return fmt.Sprintf(
-		"*Current weather in %s:*\n"+
-			"Temperature: %.2f°C\n"+
-			"Pressure: %d hPa\n"+
-			"Humidity: %d%%\n"+
-			"Description: %s",
-		weatherResponse.Name,
-		weatherResponse.Main.Temp,
-		weatherResponse.Main.Pressure,
-		weatherResponse.Main.Humidity,
-		escapeMarkdownV2(weatherResponse.Weather[0].Description),
-	)
-}
-
-func escapeMarkdownV2(text string) string {
-	replacer := strings.NewReplacer(
-		"_", "\\_", "*", "\\*", "[", "\\[", "]", "\\]", "(",
-		"\\(", ")", "\\)", "~", "\\~", "`", "\\`", ">", "\\>",
-		"#", "\\#", "+", "\\+", "-", "\\-", "=", "\\=", "|",
-		"\\|", "{", "\\{", "}", "\\}", ".", "\\.", "!", "\\!",
-	)
-
-	return replacer.Replace(text)
 }
