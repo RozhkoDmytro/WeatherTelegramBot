@@ -1,7 +1,6 @@
 package telegram
 
 import (
-	"fmt"
 	"strconv"
 	"time"
 
@@ -93,11 +92,11 @@ func (c *MyApp) SendResponse(update *telegrambot.Update) error {
 	command := update.Message.Text
 	chatId := update.Message.Chat.ID
 
-	if command == "" {
+	/* 	if command == "" {
 		geotxt := "Latitude: " + strconv.FormatFloat(update.Message.Location.Latitude, 'f', 6, 64) +
 			"\nLongitude: " + strconv.FormatFloat(update.Message.Location.Longitude, 'f', 6, 64)
 		fmt.Println(geotxt)
-	}
+	} */
 	switch command {
 	case "/start":
 		_, err := c.bot.CreateReplyKeyboard(chatId, command, DefualtKeyboard)
