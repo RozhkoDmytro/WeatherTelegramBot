@@ -25,11 +25,11 @@ https://animated-panda-0382af.netlify.app/
 	`
 )
 
-type MyApp struct {
-	config     *config.Config
-	bot        *telegrambot.ApiTelegramBot
-	apiHoliday *holiday.ApiHoliday
-	apiWeather *weather.ApiWeather
+type TelegramService struct {
+	config      *config.Config
+	apiTelegram *telegrambot.ApiTelegramBot
+	apiHoliday  *holiday.ApiHoliday
+	apiWeather  *weather.ApiWeather
 }
 
 var infoMap = map[string]string{
@@ -84,11 +84,11 @@ var flagsCountryMap = map[string]string{
 	DefaultFlags[5]: "UA",
 }
 
-func NewMyTelegramApp(cfg *config.Config, bot *telegrambot.ApiTelegramBot, apiHoliday *holiday.ApiHoliday, apiWeather *weather.ApiWeather) *MyApp {
-	return &MyApp{config: cfg, bot: bot, apiHoliday: apiHoliday, apiWeather: apiWeather}
+func NewMyTelegramApp(cfg *config.Config, apiTelegram *telegrambot.ApiTelegramBot, apiHoliday *holiday.ApiHoliday, apiWeather *weather.ApiWeather) *TelegramService {
+	return &TelegramService{config: cfg, apiTelegram: apiTelegram, apiHoliday: apiHoliday, apiWeather: apiWeather}
 }
 
-func (c *MyApp) SendResponse(update *telegrambot.Update) error {
+func (c *TelegramService) SendResponse(update *telegrambot.Update) error {
 	command := update.Message.Text
 	chatId := update.Message.Chat.ID
 
@@ -99,11 +99,11 @@ func (c *MyApp) SendResponse(update *telegrambot.Update) error {
 	} */
 	switch command {
 	case "/start":
-		_, err := c.bot.CreateReplyKeyboard(chatId, command, DefualtKeyboard)
+		_, err := c.apiTelegram.CreateReplyKeyboard(chatId, command, DefualtKeyboard)
 		return err
 
 	case "/weather":
-		_, err := c.bot.CreateReplyKeyboard(chatId, "Pls, get location", DefualtKeyboardGeolacation)
+		_, err := c.apiTelegram.CreateReplyKeyboard(chatId, "Pls, get location", DefualtKeyboardGeolacation)
 		return err
 	case "Give Your location":
 
@@ -119,14 +119,14 @@ func (c *MyApp) SendResponse(update *telegrambot.Update) error {
 			_, err = c.bot.CreateReplayMsg(chatId, text)
 			return err */
 
-		_, err := c.bot.CreateReplayMsg(chatId, geotxt)
+		_, err := c.apiTelegram.CreateReplayMsg(chatId, geotxt)
 		return err
 	default:
 		if infoMap[command] == "" && flagsCountryMap[command] == "" {
-			_, err := c.bot.CreateReplayMsg(chatId, "")
+			_, err := c.apiTelegram.CreateReplayMsg(chatId, "")
 			return err
 		} else if infoMap[command] != "" {
-			_, err := c.bot.CreateReplayMsg(chatId, infoMap[command])
+			_, err := c.apiTelegram.CreateReplayMsg(chatId, infoMap[command])
 			return err
 		} else {
 			// send API request and create text message with holidays
@@ -134,20 +134,20 @@ func (c *MyApp) SendResponse(update *telegrambot.Update) error {
 			if err != nil {
 				return err
 			}
-			_, err = c.bot.CreateReplayMsg(chatId, text)
+			_, err = c.apiTelegram.CreateReplayMsg(chatId, text)
 			return err
 		}
 	}
 }
 
-func (c *MyApp) getGeolocation(chatId int) (float64, float64) {
+/* func (c *TelegramService) getGeolocation(chatId int) (float64, float64) {
 	// This is a mock function. Replace with actual geolocation fetching logic.
 	latitude := 50.4501  // Example latitude (Kyiv)
 	longitude := 30.5234 // Example longitude (Kyiv)
 
-	if !c.bot.Debug {
-		c.bot.CreateReplyKeyboard(chatId, "/weatherGeo", DefualtKeyboardGeolacation)
+	if !c.apiTelegram.Debug {
+		c.apiTelegram.CreateReplyKeyboard(chatId, "/weatherGeo", DefualtKeyboardGeolacation)
 	}
 
 	return latitude, longitude
-}
+} */

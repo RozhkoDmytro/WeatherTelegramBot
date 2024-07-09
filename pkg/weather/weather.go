@@ -77,12 +77,11 @@ type Sys struct {
 }
 
 func NewApiWeather(client *http.Client, url string, t string) *ApiWeather {
-	result := ApiWeather{
+	return &ApiWeather{
 		token:   t,
 		baseURL: url,
 		client:  client,
 	}
-	return &result
 }
 
 func (api *ApiWeather) Load(latitude, longitude float64) (*WeatherResponse, error) {
@@ -106,10 +105,8 @@ func (api *ApiWeather) Load(latitude, longitude float64) (*WeatherResponse, erro
 	return &w, nil
 }
 
-func (api *ApiWeather) Description(resp *WeatherResponse) string {
-	text := formatWeatherResponse(resp)
-
-	return text
+func (resp *WeatherResponse) Description() string {
+	return formatWeatherResponse(resp)
 }
 
 func FormatWeatherResponse2(weatherResponse *WeatherResponse) string {

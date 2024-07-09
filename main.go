@@ -32,7 +32,7 @@ func main() {
 	}
 
 	// Create a new telegram bot
-	bot, err := telegrambot.NewBot(cfg.Token, logger)
+	apiTelegram, err := telegrambot.NewBot(cfg.Token, logger)
 	if err != nil {
 		panic(err)
 	}
@@ -40,8 +40,8 @@ func main() {
 	apiWeather := weather.NewApiWeather(&http.Client{}, weather.WeatherApiUrl, cfg.TokenWeather)
 
 	// create all background in one struct
-	telegramApp := telegram.NewMyTelegramApp(&cfg, bot, apiHoliday, apiWeather)
-	bot.ListenAndServe(defualtTimeout, telegramApp.SendResponse)
+	telegramApp := telegram.NewMyTelegramApp(&cfg, apiTelegram, apiHoliday, apiWeather)
+	apiTelegram.ListenAndServe(defualtTimeout, telegramApp.SendResponse)
 }
 
 // Create logger and set fields
