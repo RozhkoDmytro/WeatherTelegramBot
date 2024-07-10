@@ -78,7 +78,7 @@ func TestCreateReplayMsg(t *testing.T) {
 
 	for name, tc := range testCases {
 		t.Run("Test Create Replay Msg", func(t *testing.T) {
-			// Keep
+			// Keep a
 
 			if tc.input == "/start" {
 				expected := []byte(tc.expected)
