@@ -3,7 +3,6 @@ package telegram
 import (
 	"time"
 
-	"projecttelegrambot/pkg/config"
 	"projecttelegrambot/pkg/holiday"
 	"projecttelegrambot/pkg/weather"
 
@@ -140,8 +139,4 @@ func (c *TelegramService) CreateSendResponse(update *telegrambot.Update) error {
 func isUnknownCommand(update *telegrambot.Update) bool {
 	command := update.Message.Text
 	return infoMap[command] == "" && flagsCountryMap[command] == "" && update.Message.Location != nil
-}
-
-func (c *MyApp) SetLogger(l *slog.Logger) {
-	c.bot.Logger = l
 }
