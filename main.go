@@ -43,7 +43,7 @@ func main() {
 	telegramSrv := telegram.NewMyTelegramService(apiTelegram, apiHoliday, apiWeather)
 
 	// Start process listnen and after-serving responce
-	apiTelegram.ListenAndServe(defualtTimeout, telegramSrv.SendResponse)
+	apiTelegram.ListenAndServe(defualtTimeout, telegramSrv.CreateSendResponse)
 }
 
 // Create logger and set fields

@@ -1,7 +1,6 @@
 package telegram
 
 import (
-	"reflect"
 	"time"
 
 	"projecttelegrambot/pkg/config"
@@ -88,7 +87,7 @@ func NewMyTelegramService(apiTelegram *telegrambot.ApiTelegramBot, apiHoliday *h
 	return &TelegramService{apiTelegram: apiTelegram, apiHoliday: apiHoliday, apiWeather: apiWeather}
 }
 
-func (c *TelegramService) SendResponse(update *telegrambot.Update) error {
+func (c *TelegramService) CreateSendResponse(update *telegrambot.Update) error {
 	command := update.Message.Text
 	chatId := update.Message.Chat.ID
 
@@ -123,7 +122,7 @@ func (c *TelegramService) SendResponse(update *telegrambot.Update) error {
 			return err
 		}
 		// responce with fill Location
-		if hasField(update.Message, "Location") {
+		if update.Message.Location != nil {
 			resp, err := c.apiWeather.Load(update.Message.Location.Latitude, update.Message.Location.Longitude)
 			if err != nil {
 				return err
@@ -140,19 +139,7 @@ func (c *TelegramService) SendResponse(update *telegrambot.Update) error {
 
 func isUnknownCommand(update *telegrambot.Update) bool {
 	command := update.Message.Text
-	return infoMap[command] == "" && flagsCountryMap[command] == "" && !hasField(update.Message, "Location")
-}
-
-func hasField(obj interface{}, fieldName string) bool {
-	val := reflect.ValueOf(obj)
-	if val.Kind() == reflect.Ptr {
-		val = val.Elem()
-	}
-	if val.Kind() != reflect.Struct {
-		return false
-	}
-	field := val.FieldByName(fieldName)
-	return field.IsValid()
+	return infoMap[command] == "" && flagsCountryMap[command] == "" && update.Message.Location != nil
 }
 
 func (c *MyApp) SetLogger(l *slog.Logger) {
