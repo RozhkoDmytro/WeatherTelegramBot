@@ -104,52 +104,52 @@ func (api *ApiWeather) Load(latitude, longitude float64) (*WeatherResponse, erro
 	return &w, nil
 }
 
-func (resp *WeatherResponse) Description() string {
+func (resp *WeatherResponse) Description() (string, error) {
 	return formatWeatherResponse(resp)
 }
 
-func formatWeatherResponse(weatherResponse *WeatherResponse) string {
-	const weatherTemplate = `*Current weather* in {{.Name}}:
-*Temperature*: {{.Main.Temp}}°C
+func formatWeatherResponse(weatherResponse *WeatherResponse) (string, error) {
+	const weatherTemplate = `*Current weather in {{.Name}}:*
+_Temperature:_ {{.Main.Temp}}°C
 _Pressure:_ {{.Main.Pressure}} hPa
 _Humidity:_ {{.Main.Humidity}}%
-_Description:_ {{(index .Weather 0).Description}}`
-
+_Description:_ {{(index .Weather 0).Description}} `
 	tmpl, err := template.New("weather").Parse(weatherTemplate)
 	if err != nil {
-		return ""
+		return "", err
 	}
 
-	var buf bytes.Buffer
-	writer := io.Writer(&buf)
-	err = tmpl.Execute(writer, weatherResponse)
+	var formatted bytes.Buffer
+	err = tmpl.Execute(&formatted, weatherResponse)
 	if err != nil {
-		return ""
+		return "", err
 	}
 
-	return buf.String()
+	return formatted.String() + getWeatherEmoji(weatherResponse), nil
 }
 
-/* // formatWeatherResponse formats the weather data with HTML using template
-func formatWeatherResponse(weatherResponse *WeatherResponse) string {
-	/* 	const weatherTemplate = `
-	<b>Current weather in {{.Name}}:</b>
-	Temperature: {{.Main.Temp}}°C
-	Pressure: {{.Main.Pressure}} hPa
-	Humidity: {{.Main.Humidity}}%
-	Description: {{(index .Weather 0).Description}}
-	`
-		tmpl, err := template.New("weather").Parse(weatherTemplate)
-		if err != nil {
-			return "error parse " + err.Error()
-		}
+// getWeatherEmoji returns the weather emoji based on the weather description
+func getWeatherEmoji(weatherResponse *WeatherResponse) string {
+	description := ""
+	if weatherResponse.Weather != nil && len(weatherResponse.Weather) > 0 {
+		description = weatherResponse.Weather[0].Description
+	}
 
-		var formatted bytes.Buffer
-		err = tmpl.Execute(&formatted, weatherResponse)
-		if err != nil {
-			return "error execute " + err.Error()
-		}
-
-	const weatherTemplate = "<b>Current weather in AAAAAA:</b>"
-	return weatherTemplate
-} */
+	//
+	switch description {
+	case "clear sky":
+		return "☀️"
+	case "few clouds", "scattered clouds", "broken clouds":
+		return "🌤"
+	case "shower rain", "rain":
+		return "🌧"
+	case "thunderstorm":
+		return "⛈"
+	case "snow":
+		return "❄️"
+	case "mist":
+		return "🌫"
+	default:
+		return "🌈"
+	}
+}
