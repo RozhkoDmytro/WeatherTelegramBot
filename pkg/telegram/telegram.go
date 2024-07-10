@@ -31,10 +31,11 @@ type TelegramService struct {
 }
 
 var infoMap = map[string]string{
-	"/start": DefaultHelpStartInfo,
-	"/help":  DefaultHelpStartInfo,
-	"/about": "Rozhko Dmytro; Go developer; bad character; unmarried (C)",
-	"/links": DefaultLinksInfo,
+	"/start":   DefaultHelpStartInfo,
+	"/help":    DefaultHelpStartInfo,
+	"/weather": "Get the current weather for your location",
+	"/about":   "Rozhko Dmytro; Go developer; bad character; unmarried (C)",
+	"/links":   DefaultLinksInfo,
 }
 
 var DefualtKeyboard = telegrambot.ReplyKeyboardMarkup{
@@ -127,7 +128,10 @@ func (c *TelegramService) createReplayMsgWeather(update *telegrambot.Update) err
 	if err != nil {
 		return err
 	}
-	geotxt := resp.Description()
+	geotxt, err := resp.Description()
+	if err != nil {
+		return err
+	}
 	_, err = c.apiTelegram.CreateReplayMsg(chatId, geotxt, CurrentParseMode)
 	return err
 }
