@@ -146,5 +146,5 @@ func (c *TelegramService) createReplayMsgHoliday(update *telegrambot.Update) err
 
 func isUnknownCommand(update *telegrambot.Update) bool {
 	command := update.Message.Text
-	return infoMap[command] == "" && flagsCountryMap[command] == "" && update.Message.Location != nil
+	return infoMap[command] == "" && flagsCountryMap[command] == "" && update.Message.Location == nil
 }
