@@ -94,11 +94,9 @@ func (c *TelegramService) CreateSendResponse(update *telegrambot.Update) error {
 	case "/start":
 		_, err := c.apiTelegram.CreateReplyKeyboard(chatId, command, DefualtKeyboard)
 		return err
-
 	case "/weather":
 		_, err := c.apiTelegram.CreateReplyKeyboard(chatId, "Pls, get location", DefualtKeyboardGeolacation)
 		return err
-
 	default:
 		// Unknown
 		if isUnknownCommand(update) {
@@ -112,28 +110,38 @@ func (c *TelegramService) CreateSendResponse(update *telegrambot.Update) error {
 		}
 		// responce with country value
 		if flagsCountryMap[command] != "" {
-			// send API request and create text message with holidays
-			text, err := c.apiHoliday.Names(flagsCountryMap[command], time.Now())
-			if err != nil {
-				return err
-			}
-			_, err = c.apiTelegram.CreateReplayMsg(chatId, text, CurrentParseMode)
-			return err
+			return c.createReplayMsgHoliday(update)
 		}
 		// responce with fill Location
 		if update.Message.Location != nil {
-			resp, err := c.apiWeather.Load(update.Message.Location.Latitude, update.Message.Location.Longitude)
-			if err != nil {
-				return err
-			}
-			// fmt.Println(resp.Description())
-			geotxt := resp.Description()
-			// fmt.Println(geotxt)
-			_, err = c.apiTelegram.CreateReplayMsg(chatId, geotxt, CurrentParseMode)
-			return err
+			return c.createReplayMsgWeather(update)
 		}
 	}
 	return nil
+}
+
+// send API request and create text message with weather and sen him
+func (c *TelegramService) createReplayMsgWeather(update *telegrambot.Update) error {
+	chatId := update.Message.Chat.ID
+	resp, err := c.apiWeather.Load(update.Message.Location.Latitude, update.Message.Location.Longitude)
+	if err != nil {
+		return err
+	}
+	geotxt := resp.Description()
+	_, err = c.apiTelegram.CreateReplayMsg(chatId, geotxt, CurrentParseMode)
+	return err
+}
+
+// send API request and create text message with holidays and sen him
+func (c *TelegramService) createReplayMsgHoliday(update *telegrambot.Update) error {
+	command := update.Message.Text
+	chatId := update.Message.Chat.ID
+	text, err := c.apiHoliday.Names(flagsCountryMap[command], time.Now())
+	if err != nil {
+		return err
+	}
+	_, err = c.apiTelegram.CreateReplayMsg(chatId, text, CurrentParseMode)
+	return err
 }
 
 func isUnknownCommand(update *telegrambot.Update) bool {
