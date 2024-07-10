@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"time"
 
+	"projecttelegrambot/pkg/config"
 	"projecttelegrambot/pkg/holiday"
 	"projecttelegrambot/pkg/weather"
 
@@ -152,4 +153,8 @@ func hasField(obj interface{}, fieldName string) bool {
 	}
 	field := val.FieldByName(fieldName)
 	return field.IsValid()
+}
+
+func (c *MyApp) SetLogger(l *slog.Logger) {
+	c.bot.Logger = l
 }
