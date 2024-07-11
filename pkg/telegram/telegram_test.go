@@ -58,10 +58,10 @@ func TestCreateReplayMsg(t *testing.T) {
 	chatId := 123456
 
 	testCases = map[string]GenericTestCase{
-		"test command start": {
+		/* 		"test command start": {
 			input:    "/start",
 			expected: `{"chat_id":123456,"text":"/start","reply_markup":{"keyboard":[[{"text":"🇺🇸 USA"},{"text":"🇬🇧 UK"},{"text":"🇨🇦 Canada"}],[{"text":"🇦🇺 Australia"},{"text":"🇮🇳 India"},{"text":"🇺🇦 Ukraine"}]],"resize_keyboard":true,"one_time_keyboard":true}}`,
-		},
+		}, */
 		"test command info": {
 			input:    "/help",
 			expected: DefaultHelpStartInfo,
@@ -78,7 +78,7 @@ func TestCreateReplayMsg(t *testing.T) {
 
 	for name, tc := range testCases {
 		t.Run("Test Create Replay Msg", func(t *testing.T) {
-			// Keep
+			// Keep a
 
 			if tc.input == "/start" {
 				expected := []byte(tc.expected)

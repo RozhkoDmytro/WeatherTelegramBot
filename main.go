@@ -9,6 +9,7 @@ import (
 	"projecttelegrambot/pkg/config"
 	"projecttelegrambot/pkg/holiday"
 	"projecttelegrambot/pkg/telegram"
+	"projecttelegrambot/pkg/weather"
 
 	"git.foxminded.ua/foxstudent107249/telegrambot"
 )
@@ -30,20 +31,19 @@ func main() {
 		panic(err)
 	}
 
-	// Create a new telegram bot
-	bot, err := telegrambot.NewBot(cfg.Token, logger)
+	// Create a all new APIs
+	apiTelegram, err := telegrambot.NewBot(cfg.Token, logger)
 	if err != nil {
 		panic(err)
 	}
 	apiHoliday := holiday.NewApiHoliday(&http.Client{}, holiday.HolidayApiUrl, cfg.TokenHoliday)
+	apiWeather := weather.NewApiWeather(&http.Client{}, weather.WeatherApiUrl, cfg.TokenWeather)
 
 	// create all background in one struct
-	telegramApp, err := telegram.NewMyTelegramApp(&cfg, bot, apiHoliday)
-	if err != nil {
-		panic(err)
-	}
+	telegramSrv := telegram.NewMyTelegramService(apiTelegram, apiHoliday, apiWeather)
 
-	bot.ListenAndServe(defualtTimeout, telegramApp.SendResponse)
+	// Start process listnen and after-serving responce
+	apiTelegram.ListenAndServe(defualtTimeout, telegramSrv.CreateSendResponse)
 }
 
 // Create logger and set fields

@@ -1,5 +1,15 @@
-git.foxminded.ua/foxstudent107249/telegrambot v0.0.0-20240708160330-ce4114791026 h1:LoI+iRrlYSuMIGAl7q2Yh+U/A4qVHhY554lEDp5AXYA=
-git.foxminded.ua/foxstudent107249/telegrambot v0.0.0-20240708160330-ce4114791026/go.mod h1:oFmKgGHwyTfKkHHmRjELpGLfZED2xjoopo2K2WlTPvk=
+git.foxminded.ua/foxstudent107249/telegrambot v0.0.0-20240709130519-0e645761eed7 h1:PAjamVedSi8G9F93PQP3msSTggnkAuJ8uMkofFWJGqM=
+git.foxminded.ua/foxstudent107249/telegrambot v0.0.0-20240709130519-0e645761eed7/go.mod h1:oFmKgGHwyTfKkHHmRjELpGLfZED2xjoopo2K2WlTPvk=
+git.foxminded.ua/foxstudent107249/telegrambot v0.0.0-20240709133006-62b7e35b2b0c h1:CfvXVYXJyEDepQ7ccDoFKgzw/CPz5U0UaWhx8WDl4zI=
+git.foxminded.ua/foxstudent107249/telegrambot v0.0.0-20240709133006-62b7e35b2b0c/go.mod h1:oFmKgGHwyTfKkHHmRjELpGLfZED2xjoopo2K2WlTPvk=
+git.foxminded.ua/foxstudent107249/telegrambot v0.0.0-20240709133846-9927bdbdaa80 h1:I1nOD6rzcjU3zL9NrcFGbZaROY/7TemugdAm0M81yMc=
+git.foxminded.ua/foxstudent107249/telegrambot v0.0.0-20240709133846-9927bdbdaa80/go.mod h1:oFmKgGHwyTfKkHHmRjELpGLfZED2xjoopo2K2WlTPvk=
+git.foxminded.ua/foxstudent107249/telegrambot v0.0.0-20240709134056-e17fe0234b0e h1:Kc20qG9rHAGUrjhAyKBPu3613e1TeGDNYVTOw7Jrguw=
+git.foxminded.ua/foxstudent107249/telegrambot v0.0.0-20240709134056-e17fe0234b0e/go.mod h1:oFmKgGHwyTfKkHHmRjELpGLfZED2xjoopo2K2WlTPvk=
+git.foxminded.ua/foxstudent107249/telegrambot v0.0.0-20240709135747-29f20ac375f7 h1:YW6G0LfZUEF3P/2NxUcjGpkgQvwTmGJL/iJTR24RExU=
+git.foxminded.ua/foxstudent107249/telegrambot v0.0.0-20240709135747-29f20ac375f7/go.mod h1:oFmKgGHwyTfKkHHmRjELpGLfZED2xjoopo2K2WlTPvk=
+git.foxminded.ua/foxstudent107249/telegrambot v0.0.0-20240710131439-70a7c558a7e2 h1:gnJjVaYEEq7OF4EcBz5B/tLsVabgN12FooTgUAgK4qM=
+git.foxminded.ua/foxstudent107249/telegrambot v0.0.0-20240710131439-70a7c558a7e2/go.mod h1:oFmKgGHwyTfKkHHmRjELpGLfZED2xjoopo2K2WlTPvk=
 github.com/caarlos0/env v3.5.0+incompatible h1:Yy0UN8o9Wtr/jGHZDpCBLpNrzcFLLM2yixi/rBrKyJs=
 github.com/caarlos0/env v3.5.0+incompatible/go.mod h1:tdCsowwCzMLdkqRYDlHpZCp2UooDD3MspDBjZ2AD02Y=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=

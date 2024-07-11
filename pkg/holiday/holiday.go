@@ -65,7 +65,7 @@ func (api *ApiHoliday) Load(country string, day time.Time) ([]Holiday, error) {
 func (api *ApiHoliday) Names(country string, day time.Time) (string, error) {
 	holydays, err := api.Load(country, day)
 	if err != nil {
-		return "", err
+		return "Sorry, an error occurred while processing your request", err
 	}
 	text := ""
 	for _, h := range holydays {
