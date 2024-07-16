@@ -1,6 +1,6 @@
 module projecttelegrambot
 
-go 1.22.2
+go 1.22.5
 
 require (
 	git.foxminded.ua/foxstudent107249/telegrambot v0.0.0-20240710131439-70a7c558a7e2
