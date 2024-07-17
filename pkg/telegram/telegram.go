@@ -14,6 +14,7 @@ const (
 	DefaultHelpStartInfo = `
 /start   - get keyboard with flags
 /help    - too same like start
+/weather - get the current weather for your location
 /about  - get some information about me
 /links   - send my(developer) links`
 
