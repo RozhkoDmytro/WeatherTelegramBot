@@ -26,10 +26,13 @@ https://animated-panda-0382af.netlify.app/
 )
 
 type TelegramService struct {
-	apiTelegram *telegrambot.ApiTelegramBot
-	apiHoliday  *holiday.ApiHoliday
-	apiWeather  *weather.ApiWeather
+	apiTelegram     *telegrambot.ApiTelegramBot
+	apiHoliday      *holiday.ApiHoliday
+	apiWeather      *weather.ApiWeather
+	previousCommand PreviousCommand
 }
+
+type PreviousCommand map[int]string
 
 var infoMap = map[string]string{
 	"/start":   DefaultHelpStartInfo,
@@ -85,12 +88,14 @@ var flagsCountryMap = map[string]string{
 }
 
 func NewMyTelegramService(apiTelegram *telegrambot.ApiTelegramBot, apiHoliday *holiday.ApiHoliday, apiWeather *weather.ApiWeather) *TelegramService {
-	return &TelegramService{apiTelegram: apiTelegram, apiHoliday: apiHoliday, apiWeather: apiWeather}
+	return &TelegramService{apiTelegram: apiTelegram, apiHoliday: apiHoliday, apiWeather: apiWeather, previousCommand: PreviousCommand{}}
 }
 
 func (c *TelegramService) CreateSendResponse(update *telegrambot.Update) error {
 	command := update.Message.Text
 	chatId := update.Message.Chat.ID
+
+	c.saveCommand(chatId, command)
 
 	switch command {
 	case "/start":
@@ -115,9 +120,10 @@ func (c *TelegramService) CreateSendResponse(update *telegrambot.Update) error {
 			return c.createReplayMsgHoliday(update)
 		}
 		// responce with fill Location
-		if update.Message.Location != nil {
+		if update.Message.Location != nil && c.previousCommand[chatId] == "/weather" {
 			return c.createReplayMsgWeather(update)
 		}
+
 	}
 	return nil
 }
@@ -152,4 +158,10 @@ func (c *TelegramService) createReplayMsgHoliday(update *telegrambot.Update) err
 func isUnknownCommand(update *telegrambot.Update) bool {
 	command := update.Message.Text
 	return infoMap[command] == "" && flagsCountryMap[command] == "" && update.Message.Location == nil
+}
+
+func (c *TelegramService) saveCommand(chatId int, command string) {
+	if infoMap[command] != "" {
+		c.previousCommand[chatId] = command
+	}
 }
