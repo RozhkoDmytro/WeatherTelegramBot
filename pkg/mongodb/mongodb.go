@@ -2,6 +2,7 @@ package mongodb
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"time"
 
@@ -25,10 +26,10 @@ type ApiMongoDB struct {
 	db      *mongo.Database
 }
 
-type Subscribe struct {
-	ChatId   int           `json:"chatId"`
-	Location Location      `json:"location"`
-	Hour     time.Duration `json:"hour"`
+type Subscribers struct {
+	ChatId   int      `json:"chatId"`
+	Location Location `json:"location"`
+	Hour     int      `json:"hour"`
 }
 
 // Location represents a point on the map.
@@ -39,7 +40,7 @@ type Location struct {
 	Latitude float64 `json:"latitude"`
 }
 
-func NewApiMongoDB(url string, nameDataBase string, l *slog.Logger) (*ApiMongoDB, error) {
+func NewApiMongoDB(url string, l *slog.Logger) (*ApiMongoDB, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*defualtTimeOut)
 	defer cancel()
 
@@ -59,7 +60,7 @@ func NewApiMongoDB(url string, nameDataBase string, l *slog.Logger) (*ApiMongoDB
 		baseURL: url,
 		Client:  client,
 		context: &ctx,
-		db:      client.Database(nameDataBase),
+		db:      client.Database(defaultDBName),
 		Logger:  l,
 	}, nil
 }
@@ -71,8 +72,11 @@ func (apiMongoDB *ApiMongoDB) CloseApiMongoDB() error {
 	return nil
 }
 
-func (apiMongoDB *ApiMongoDB) AddSubscribe(chatId int, lon, lat float64, t *time.Time) error {
-	s := Subscribe{ChatId: chatId, Location: Location{Longitude: lon, Latitude: lat}, Hour: time.Hour}
+func (apiMongoDB *ApiMongoDB) Subscribe(chatId int, lon, lat float64, t time.Time) error {
+	s := Subscribers{ChatId: chatId, Location: Location{Longitude: lon, Latitude: lat}, Hour: t.Hour()}
+
+	// firstly delete all previos subscribe for this chatId
+	apiMongoDB.Unsubscribe(chatId)
 
 	collection := apiMongoDB.Client.Database(defaultDBName).Collection(defualtTableSubscribe)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*defualtTimeOut)
@@ -88,15 +92,15 @@ func (apiMongoDB *ApiMongoDB) AddSubscribe(chatId int, lon, lat float64, t *time
 	return nil
 }
 
-func (apiMongoDB *ApiMongoDB) DeleteSubscribe(chatId int) error {
+func (apiMongoDB *ApiMongoDB) Unsubscribe(chatId int) error {
 	collection := apiMongoDB.Client.Database(defaultDBName).Collection(defualtTableSubscribe)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*defualtTimeOut)
 	defer cancel()
 
 	// Define the filter for the document you want to delete
-	filter := bson.D{{Key: "chatId", Value: chatId}}
+	filter := bson.D{{Key: "chatid", Value: chatId}}
 
-	res, err := collection.DeleteOne(ctx, filter)
+	res, err := collection.DeleteMany(ctx, filter)
 	if err != nil {
 		return err
 	}
@@ -106,14 +110,13 @@ func (apiMongoDB *ApiMongoDB) DeleteSubscribe(chatId int) error {
 	return nil
 }
 
-func (apiMongoDB *ApiMongoDB) GetSubsribersByTime(t time.Duration) ([]int, error) {
+func (apiMongoDB *ApiMongoDB) GetSubsribersByTime(h int) ([]int, error) {
 	collection := apiMongoDB.Client.Database(defaultDBName).Collection(defualtTableSubscribe)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*defualtTimeOut)
 	defer cancel()
 
 	// Define the filter for the document you want to delete
-	filter := bson.D{{Key: "time", Value: t}}
-
+	filter := bson.D{{Key: "hour", Value: h}}
 	cursor, err := collection.Find(ctx, filter)
 	if err != nil {
 		return nil, err
@@ -127,8 +130,42 @@ func (apiMongoDB *ApiMongoDB) GetSubsribersByTime(t time.Duration) ([]int, error
 			return nil, err
 		}
 
-		if value, ok := document["ChatId"]; ok {
-			results = append(results, value.(int))
+		if value, ok := document["chatid"]; ok {
+			results = append(results, int(value.(int32)))
+		}
+	}
+
+	if err := cursor.Err(); err != nil {
+		return nil, err
+	}
+
+	apiMongoDB.Logger.Info("Results of ChatId", "Subscribers", results)
+
+	return results, nil
+}
+
+func (apiMongoDB *ApiMongoDB) GetAllSubsribers() ([]int, error) {
+	collection := apiMongoDB.Client.Database(defaultDBName).Collection(defualtTableSubscribe)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*defualtTimeOut)
+	defer cancel()
+
+	// Define the filter for the document you want to delete
+	cursor, err := collection.Find(ctx, bson.D{})
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	var results []int
+	for cursor.Next(ctx) {
+		var document bson.M
+		if err := cursor.Decode(&document); err != nil {
+			return nil, err
+		}
+		fmt.Println(document)
+		fmt.Println("------->")
+		if value, ok := document["chatid"]; ok {
+			results = append(results, int(value.(int32)))
 		}
 	}
 

@@ -1,9 +1,11 @@
 package telegram
 
 import (
+	"strconv"
 	"time"
 
 	"projecttelegrambot/pkg/holiday"
+	"projecttelegrambot/pkg/mongodb"
 	"projecttelegrambot/pkg/weather"
 
 	"git.foxminded.ua/foxstudent107249/telegrambot"
@@ -15,6 +17,8 @@ const (
 /start   - get keyboard with flags
 /help    - too same like start
 /weather - get the current weather for your location
+/subcsribe -   subscription to the weather report,
+/unsubcsribe - unsubscription to the weather report,
 /about  - get some information about me
 /links   - send my(developer) links`
 
@@ -29,17 +33,20 @@ type TelegramService struct {
 	apiTelegram     *telegrambot.ApiTelegramBot
 	apiHoliday      *holiday.ApiHoliday
 	apiWeather      *weather.ApiWeather
+	apiMongoDB      *mongodb.ApiMongoDB
 	previousCommand PreviousCommand
 }
 
 type PreviousCommand map[int]string
 
 var infoMap = map[string]string{
-	"/start":   DefaultHelpStartInfo,
-	"/help":    DefaultHelpStartInfo,
-	"/weather": "Get the current weather for your location",
-	"/about":   "Rozhko Dmytro; Go developer; bad character; unmarried (C)",
-	"/links":   DefaultLinksInfo,
+	"/start":       DefaultHelpStartInfo,
+	"/help":        DefaultHelpStartInfo,
+	"/weather":     "Get the current weather for your location",
+	"/subcsribe":   "Subscription to the weather report",
+	"/unsubcsribe": "Unsubscription to the weather report",
+	"/about":       "Rozhko Dmytro; Go developer; bad character; unmarried (C)",
+	"/links":       DefaultLinksInfo,
 }
 
 var DefualtKeyboard = telegrambot.ReplyKeyboardMarkup{
@@ -87,8 +94,14 @@ var flagsCountryMap = map[string]string{
 	DefaultFlags[5]: "UA",
 }
 
-func NewMyTelegramService(apiTelegram *telegrambot.ApiTelegramBot, apiHoliday *holiday.ApiHoliday, apiWeather *weather.ApiWeather) *TelegramService {
-	return &TelegramService{apiTelegram: apiTelegram, apiHoliday: apiHoliday, apiWeather: apiWeather, previousCommand: PreviousCommand{}}
+func NewMyTelegramService(apiTelegram *telegrambot.ApiTelegramBot, apiHoliday *holiday.ApiHoliday, apiWeather *weather.ApiWeather, apiMongoDB *mongodb.ApiMongoDB) *TelegramService {
+	return &TelegramService{
+		apiTelegram:     apiTelegram,
+		apiHoliday:      apiHoliday,
+		apiWeather:      apiWeather,
+		apiMongoDB:      apiMongoDB,
+		previousCommand: PreviousCommand{},
+	}
 }
 
 func (c *TelegramService) CreateSendResponse(update *telegrambot.Update) error {
@@ -101,8 +114,26 @@ func (c *TelegramService) CreateSendResponse(update *telegrambot.Update) error {
 	case "/start":
 		_, err := c.apiTelegram.CreateReplyKeyboard(chatId, command, DefualtKeyboard)
 		return err
-	case "/weather":
+	case "/weather", "/subcsribe":
 		_, err := c.apiTelegram.CreateReplyKeyboard(chatId, "Pls, get location", DefualtKeyboardGeolacation)
+		return err
+	case "/unsubcsribe":
+		return c.apiMongoDB.Unsubscribe(chatId)
+	case "/allsubcsribes":
+		res, err := c.apiMongoDB.GetAllSubsribers()
+		text := "Subscribers: "
+		for _, v := range res {
+			text += strconv.Itoa(v) + ";"
+		}
+		c.apiTelegram.CreateReplayMsg(chatId, text, CurrentParseMode)
+		return err
+	case "/subintime":
+		res, err := c.apiMongoDB.GetSubsribersByTime(time.Now().Hour())
+		text := "Subscribers: "
+		for _, v := range res {
+			text += strconv.Itoa(v) + ";"
+		}
+		c.apiTelegram.CreateReplayMsg(chatId, text, CurrentParseMode)
 		return err
 	default:
 		// Unknown
@@ -120,8 +151,18 @@ func (c *TelegramService) CreateSendResponse(update *telegrambot.Update) error {
 			return c.createReplayMsgHoliday(update)
 		}
 		// responce with fill Location
-		if update.Message.Location != nil && c.previousCommand[chatId] == "/weather" {
-			return c.createReplayMsgWeather(update)
+		if update.Message.Location != nil {
+			// check previous command!
+			switch c.previousCommand[chatId] {
+			case "/subcsribe":
+				err := c.apiMongoDB.Subscribe(chatId, update.Message.Location.Latitude, update.Message.Location.Longitude, time.Now())
+				if err == nil {
+					c.apiTelegram.CreateReplayMsg(chatId, "Subscription successfully added", CurrentParseMode)
+				}
+				return err
+			default:
+				return c.createReplayMsgWeather(update)
+			}
 		}
 
 	}

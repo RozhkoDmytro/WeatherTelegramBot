@@ -8,6 +8,7 @@ import (
 
 	"projecttelegrambot/pkg/config"
 	"projecttelegrambot/pkg/holiday"
+	"projecttelegrambot/pkg/mongodb"
 	"projecttelegrambot/pkg/telegram"
 	"projecttelegrambot/pkg/weather"
 
@@ -31,19 +32,26 @@ func main() {
 		panic(err)
 	}
 
-	// Create a all new APIs
+	// Create all new APIs and connection
 	apiTelegram, err := telegrambot.NewBot(cfg.Token, logger)
 	if err != nil {
 		panic(err)
 	}
 	apiHoliday := holiday.NewApiHoliday(&http.Client{}, holiday.HolidayApiUrl, cfg.TokenHoliday)
 	apiWeather := weather.NewApiWeather(&http.Client{}, weather.WeatherApiUrl, cfg.TokenWeather)
+	apiMongoDB, err := mongodb.NewApiMongoDB(mongodb.BaseURL, logger)
+	if err != nil {
+		logger.Error("Can`t create connection with MongoDB", "Error", err)
+	}
 
 	// create all background in one struct
-	telegramSrv := telegram.NewMyTelegramService(apiTelegram, apiHoliday, apiWeather)
+	telegramSrv := telegram.NewMyTelegramService(apiTelegram, apiHoliday, apiWeather, apiMongoDB)
 
 	// Start process listnen and after-serving responce
 	apiTelegram.ListenAndServe(defualtTimeout, telegramSrv.CreateSendResponse)
+
+	// Start ticker subscribers
+
 }
 
 // Create logger and set fields
