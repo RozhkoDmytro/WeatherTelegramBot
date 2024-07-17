@@ -1,7 +1,6 @@
 package telegram
 
 import (
-	"strconv"
 	"time"
 
 	"projecttelegrambot/pkg/holiday"
@@ -120,22 +119,6 @@ func (c *TelegramService) CreateSendResponse(update *telegrambot.Update) error {
 		return err
 	case "/unsubcsribe":
 		return c.apiMongoDB.Unsubscribe(chatId)
-	case "/allsubcsribes":
-		res, err := c.apiMongoDB.GetAllSubsribers()
-		text := "Subscribers: "
-		for _, v := range res {
-			text += strconv.Itoa(v) + ";"
-		}
-		c.apiTelegram.CreateReplayMsg(chatId, text, CurrentParseMode)
-		return err
-	case "/subintime":
-		res, err := c.apiMongoDB.GetSubsribersByTime(time.Now().Hour())
-		text := "Subscribers: "
-		for _, v := range res {
-			text += strconv.Itoa(int(v["chatid"].(int32))) + ";"
-		}
-		c.apiTelegram.CreateReplayMsg(chatId, text, CurrentParseMode)
-		return err
 	default:
 		// Unknown
 		if isUnknownCommand(update) {
