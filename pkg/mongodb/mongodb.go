@@ -176,6 +176,3 @@ func (apiMongoDB *ApiMongoDB) GetAllSubsribers() ([]int, error) {
 
 	return results, nil
 }
-
-func SendReport() {
-}
