@@ -1,6 +1,8 @@
 package telegram
 
 import (
+	"fmt"
+	"reflect"
 	"strconv"
 	"time"
 
@@ -9,6 +11,7 @@ import (
 	"projecttelegrambot/pkg/weather"
 
 	"git.foxminded.ua/foxstudent107249/telegrambot"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 const (
@@ -131,7 +134,7 @@ func (c *TelegramService) CreateSendResponse(update *telegrambot.Update) error {
 		res, err := c.apiMongoDB.GetSubsribersByTime(time.Now().Hour())
 		text := "Subscribers: "
 		for _, v := range res {
-			text += strconv.Itoa(v) + ";"
+			text += strconv.Itoa(int(v["chatid"].(int32))) + ";"
 		}
 		c.apiTelegram.CreateReplayMsg(chatId, text, CurrentParseMode)
 		return err
@@ -194,6 +197,42 @@ func (c *TelegramService) createReplayMsgHoliday(update *telegrambot.Update) err
 	}
 	_, err = c.apiTelegram.CreateReplayMsg(chatId, text, CurrentParseMode)
 	return err
+}
+
+func (c *TelegramService) SendReportWeather(subscribers []primitive.M) {
+	for _, document := range subscribers {
+		var update telegrambot.Update
+		var location telegrambot.Location
+		update.Message.Chat.ID = int(document["chatid"].(int32))
+		// Location
+		fmt.Println("======================")
+		fmt.Println(document["location"])
+		fmt.Println("======================")
+		l := document["location"].(primitive.M)
+		fmt.Println(reflect.TypeOf(l["latitude"]))
+		fmt.Println("======================")
+		if lat, ok := l["latitude"].(float64); ok {
+			fmt.Println(lat)
+			fmt.Println("======================")
+			location.Latitude = lat
+
+		} else {
+			fmt.Println("Invalid or missing latitude")
+		}
+
+		if lon, ok := l["longitude"].(float64); ok {
+			fmt.Println(lon)
+			fmt.Println("======================")
+			location.Longitude = lon
+		} else {
+			fmt.Println("Invalid or missing longitude")
+		}
+		update.Message.Location = &location
+
+		// Send report
+		err := c.createReplayMsgWeather(&update)
+		c.apiTelegram.Logger.Error("Can`t create report", "Error", err)
+	}
 }
 
 func isUnknownCommand(update *telegrambot.Update) bool {

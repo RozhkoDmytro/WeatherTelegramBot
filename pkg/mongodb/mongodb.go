@@ -2,11 +2,11 @@ package mongodb
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -72,7 +72,7 @@ func (apiMongoDB *ApiMongoDB) CloseApiMongoDB() error {
 	return nil
 }
 
-func (apiMongoDB *ApiMongoDB) Subscribe(chatId int, lon, lat float64, t time.Time) error {
+func (apiMongoDB *ApiMongoDB) Subscribe(chatId int, lat, lon float64, t time.Time) error {
 	s := Subscribers{ChatId: chatId, Location: Location{Longitude: lon, Latitude: lat}, Hour: t.Hour()}
 
 	// firstly delete all previos subscribe for this chatId
@@ -110,7 +110,7 @@ func (apiMongoDB *ApiMongoDB) Unsubscribe(chatId int) error {
 	return nil
 }
 
-func (apiMongoDB *ApiMongoDB) GetSubsribersByTime(h int) ([]int, error) {
+func (apiMongoDB *ApiMongoDB) GetSubsribersByTime(h int) ([]primitive.M, error) {
 	collection := apiMongoDB.Client.Database(defaultDBName).Collection(defualtTableSubscribe)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*defualtTimeOut)
 	defer cancel()
@@ -123,15 +123,15 @@ func (apiMongoDB *ApiMongoDB) GetSubsribersByTime(h int) ([]int, error) {
 	}
 	defer cursor.Close(ctx)
 
-	var results []int
+	var results []primitive.M
 	for cursor.Next(ctx) {
 		var document bson.M
 		if err := cursor.Decode(&document); err != nil {
 			return nil, err
 		}
 
-		if value, ok := document["chatid"]; ok {
-			results = append(results, int(value.(int32)))
+		if _, ok := document["chatid"]; ok {
+			results = append(results, document)
 		}
 	}
 
@@ -162,8 +162,7 @@ func (apiMongoDB *ApiMongoDB) GetAllSubsribers() ([]int, error) {
 		if err := cursor.Decode(&document); err != nil {
 			return nil, err
 		}
-		fmt.Println(document)
-		fmt.Println("------->")
+
 		if value, ok := document["chatid"]; ok {
 			results = append(results, int(value.(int32)))
 		}
@@ -176,4 +175,7 @@ func (apiMongoDB *ApiMongoDB) GetAllSubsribers() ([]int, error) {
 	apiMongoDB.Logger.Info("Results of ChatId", "Subscribers", results)
 
 	return results, nil
+}
+
+func SendReport() {
 }
