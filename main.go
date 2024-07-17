@@ -49,37 +49,27 @@ func main() {
 	telegramSrv := telegram.NewMyTelegramService(apiTelegram, apiHoliday, apiWeather, apiMongoDB)
 
 	// Start ticker subscribers
-	subscribers, err := apiMongoDB.GetSubsribersByTime(time.Now().Hour())
-	if err != nil {
-		logger.Error("Can`t create report", "Error", err)
-	}
-	telegramSrv.SendReportWeather(subscribers)
+	ticker := time.NewTicker(time.Hour)
+	done := make(chan bool)
+	go func() {
+		for {
+			select {
+			case <-done:
+				return
+			case t := <-ticker.C:
+				subscribers, err := apiMongoDB.GetSubsribersByTime(t.Hour())
+				if err != nil {
+					logger.Error("Can`t create report", "Error", err)
+				}
+				telegramSrv.SendReportWeather(subscribers)
+			}
+		}
+	}()
+	defer ticker.Stop()
 
 	// Start process listnen and after-serving responce
 	apiTelegram.ListenAndServe(defualtTimeout, telegramSrv.CreateSendResponse)
-
-	/*
-		ticker := time.NewTicker(time.Hour)
-		done := make(chan bool)
-		go func() {
-			for {
-				select {
-				case <-done:
-					return
-				case t := <-ticker.C:
-					subscribers, err := apiMongoDB.GetSubsribersByTime(t.Hour())
-					if err != nil {
-						logger.Error("Can`t create report", "Error", err)
-					}
-					telegramSrv.SendReportWeather(subscribers)
-				}
-			}
-		}()
-		defer ticker.Stop()
-
-		done <- true
-		fmt.Println("Ticker stopped")
-	*/
+	done <- true
 }
 
 // Create logger and set fields

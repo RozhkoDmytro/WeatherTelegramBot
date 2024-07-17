@@ -1,8 +1,6 @@
 package telegram
 
 import (
-	"fmt"
-	"reflect"
 	"strconv"
 	"time"
 
@@ -205,30 +203,11 @@ func (c *TelegramService) SendReportWeather(subscribers []primitive.M) {
 		var location telegrambot.Location
 		update.Message.Chat.ID = int(document["chatid"].(int32))
 		// Location
-		fmt.Println("======================")
-		fmt.Println(document["location"])
-		fmt.Println("======================")
 		l := document["location"].(primitive.M)
-		fmt.Println(reflect.TypeOf(l["latitude"]))
-		fmt.Println("======================")
-		if lat, ok := l["latitude"].(float64); ok {
-			fmt.Println(lat)
-			fmt.Println("======================")
-			location.Latitude = lat
+		location.Latitude = l["latitude"].(float64)
+		location.Longitude = l["longitude"].(float64)
 
-		} else {
-			fmt.Println("Invalid or missing latitude")
-		}
-
-		if lon, ok := l["longitude"].(float64); ok {
-			fmt.Println(lon)
-			fmt.Println("======================")
-			location.Longitude = lon
-		} else {
-			fmt.Println("Invalid or missing longitude")
-		}
 		update.Message.Location = &location
-
 		// Send report
 		err := c.createReplayMsgWeather(&update)
 		c.apiTelegram.Logger.Error("Can`t create report", "Error", err)
