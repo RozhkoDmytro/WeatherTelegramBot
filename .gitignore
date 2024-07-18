@@ -2,4 +2,4 @@
 # Ignore the .vscode folder
 .vscode/
 *.log
-*.netrc
+.netrc
