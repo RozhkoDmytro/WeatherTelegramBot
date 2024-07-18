@@ -19,11 +19,12 @@ const (
 )
 
 type MongoDBService struct {
-	client  *mongo.Client
-	logger  *slog.Logger
-	baseURL string
-	context *context.Context
-	db      *mongo.Database
+	client     *mongo.Client
+	logger     *slog.Logger
+	baseURL    string
+	context    *context.Context
+	db         *mongo.Database
+	collection *mongo.Collection
 }
 
 type Subscribers struct {
@@ -57,11 +58,12 @@ func NewMongoDBService(url string, l *slog.Logger) (*MongoDBService, error) {
 	l.Info("Connected to MongoDB!")
 
 	return &MongoDBService{
-		baseURL: url,
-		client:  client,
-		context: &ctx,
-		db:      client.Database(defaultDBName),
-		logger:  l,
+		baseURL:    url,
+		client:     client,
+		context:    &ctx,
+		db:         client.Database(defaultDBName),
+		logger:     l,
+		collection: client.Database(defaultDBName).Collection(defualtTableSubscribe),
 	}, nil
 }
 
@@ -78,11 +80,10 @@ func (srv *MongoDBService) Subscribe(chatId int, lat, lon float64, t time.Time) 
 	// firstly delete all previos subscribe for this chatId
 	srv.Unsubscribe(chatId)
 
-	collection := srv.client.Database(defaultDBName).Collection(defualtTableSubscribe)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*defualtTimeOut)
 	defer cancel()
 
-	res, err := collection.InsertOne(ctx, s)
+	res, err := srv.collection.InsertOne(ctx, s)
 	if err != nil {
 		return err
 	}
@@ -93,14 +94,13 @@ func (srv *MongoDBService) Subscribe(chatId int, lat, lon float64, t time.Time) 
 }
 
 func (srv *MongoDBService) Unsubscribe(chatId int) error {
-	collection := srv.client.Database(defaultDBName).Collection(defualtTableSubscribe)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*defualtTimeOut)
 	defer cancel()
 
 	// Define the filter for the document you want to delete
 	filter := bson.D{{Key: "chatid", Value: chatId}}
 
-	res, err := collection.DeleteMany(ctx, filter)
+	res, err := srv.collection.DeleteMany(ctx, filter)
 	if err != nil {
 		return err
 	}
@@ -111,13 +111,12 @@ func (srv *MongoDBService) Unsubscribe(chatId int) error {
 }
 
 func (srv *MongoDBService) GetSubsribersByTime(h int) ([]primitive.M, error) {
-	collection := srv.client.Database(defaultDBName).Collection(defualtTableSubscribe)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*defualtTimeOut)
 	defer cancel()
 
 	// Define the filter for the document you want to delete
 	filter := bson.D{{Key: "hour", Value: h}}
-	cursor, err := collection.Find(ctx, filter)
+	cursor, err := srv.collection.Find(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
