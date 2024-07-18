@@ -49,24 +49,9 @@ func main() {
 	telegramSrv := telegram.NewMyTelegramService(apiTelegram, apiHoliday, apiWeather, mongoDBSrv)
 
 	// Start ticker subscribers
-	ticker := time.NewTicker(time.Hour)
+	ticker := time.NewTicker(time.Second * 10)
 	done := make(chan bool)
-	go func() {
-		for {
-			select {
-			case <-done:
-				return
-			case t := <-ticker.C:
-				subscribers, err := mongoDBSrv.GetSubsribersByTime(t.Hour())
-				if err != nil {
-					logger.Error("Can`t create report", "Error", err)
-				}
-				if len(subscribers) != 0 {
-					telegramSrv.SendReportWeather(subscribers)
-				}
-			}
-		}
-	}()
+	go telegramSrv.CheckSubscribers(done, ticker)
 	defer ticker.Stop()
 
 	// Start process listnen and after-serving responce

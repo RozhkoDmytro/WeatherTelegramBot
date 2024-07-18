@@ -152,6 +152,25 @@ func (c *TelegramService) CreateSendResponse(update *telegrambot.Update) error {
 	return nil
 }
 
+// check subscribers in this hour and send report about currently weather
+func (c *TelegramService) CheckSubscribers(done chan bool, ticker *time.Ticker) {
+	for {
+		select {
+		case <-done:
+			return
+		case t := <-ticker.C:
+			subscribers, err := c.mongoDBSrv.GetSubsribersByTime(t.Hour())
+			if err != nil {
+				c.apiTelegram.Logger.Error("Can`t create report", "Error", err)
+			}
+			if len(subscribers) != 0 {
+				c.SendReportWeather(subscribers)
+			}
+
+		}
+	}
+}
+
 // send API request and create text message with weather and sen him
 func (c *TelegramService) createReplayMsgWeather(update *telegrambot.Update) error {
 	chatId := update.Message.Chat.ID
