@@ -33,7 +33,7 @@ type TelegramService struct {
 	apiTelegram     *telegrambot.ApiTelegramBot
 	apiHoliday      *holiday.ApiHoliday
 	apiWeather      *weather.ApiWeather
-	apiMongoDB      *mongodb.ApiMongoDB
+	mongoDBSrv      *mongodb.MongoDBService
 	previousCommand PreviousCommand
 }
 
@@ -94,12 +94,12 @@ var flagsCountryMap = map[string]string{
 	DefaultFlags[5]: "UA",
 }
 
-func NewMyTelegramService(apiTelegram *telegrambot.ApiTelegramBot, apiHoliday *holiday.ApiHoliday, apiWeather *weather.ApiWeather, apiMongoDB *mongodb.ApiMongoDB) *TelegramService {
+func NewMyTelegramService(apiTelegram *telegrambot.ApiTelegramBot, apiHoliday *holiday.ApiHoliday, apiWeather *weather.ApiWeather, mongoDBSrv *mongodb.MongoDBService) *TelegramService {
 	return &TelegramService{
 		apiTelegram:     apiTelegram,
 		apiHoliday:      apiHoliday,
 		apiWeather:      apiWeather,
-		apiMongoDB:      apiMongoDB,
+		mongoDBSrv:      mongoDBSrv,
 		previousCommand: PreviousCommand{},
 	}
 }
@@ -118,7 +118,7 @@ func (c *TelegramService) CreateSendResponse(update *telegrambot.Update) error {
 		_, err := c.apiTelegram.CreateReplyKeyboard(chatId, "Pls, get location", DefualtKeyboardGeolacation)
 		return err
 	case "/unsubcsribe":
-		return c.apiMongoDB.Unsubscribe(chatId)
+		return c.mongoDBSrv.Unsubscribe(chatId)
 	default:
 		// Unknown
 		if isUnknownCommand(update) {
@@ -139,7 +139,7 @@ func (c *TelegramService) CreateSendResponse(update *telegrambot.Update) error {
 			// check previous command!
 			switch c.previousCommand[chatId] {
 			case "/subcsribe":
-				err := c.apiMongoDB.Subscribe(chatId, update.Message.Location.Latitude, update.Message.Location.Longitude, time.Now())
+				err := c.mongoDBSrv.Subscribe(chatId, update.Message.Location.Latitude, update.Message.Location.Longitude, time.Now())
 				if err == nil {
 					c.apiTelegram.CreateReplayMsg(chatId, "Subscription successfully added", CurrentParseMode)
 				}

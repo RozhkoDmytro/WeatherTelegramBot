@@ -17,7 +17,7 @@ func TestNewApiMongoDB(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	_, err = mongodb.NewApiMongoDB("http://wrongURL", logger)
+	_, err = mongodb.NewMongoDBService("http://wrongURL", logger)
 
 	if err == nil {
 		assert.Equal(t, "True", "False", "Wrong url")

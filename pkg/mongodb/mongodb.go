@@ -18,9 +18,9 @@ const (
 	defualtTimeOut        = 5
 )
 
-type ApiMongoDB struct {
-	Client  *mongo.Client
-	Logger  *slog.Logger
+type MongoDBService struct {
+	client  *mongo.Client
+	logger  *slog.Logger
 	baseURL string
 	context *context.Context
 	db      *mongo.Database
@@ -40,7 +40,7 @@ type Location struct {
 	Latitude float64 `json:"latitude"`
 }
 
-func NewApiMongoDB(url string, l *slog.Logger) (*ApiMongoDB, error) {
+func NewMongoDBService(url string, l *slog.Logger) (*MongoDBService, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*defualtTimeOut)
 	defer cancel()
 
@@ -56,29 +56,29 @@ func NewApiMongoDB(url string, l *slog.Logger) (*ApiMongoDB, error) {
 
 	l.Info("Connected to MongoDB!")
 
-	return &ApiMongoDB{
+	return &MongoDBService{
 		baseURL: url,
-		Client:  client,
+		client:  client,
 		context: &ctx,
 		db:      client.Database(defaultDBName),
-		Logger:  l,
+		logger:  l,
 	}, nil
 }
 
-func (apiMongoDB *ApiMongoDB) CloseApiMongoDB() error {
-	if err := apiMongoDB.Client.Disconnect(*apiMongoDB.context); err != nil {
+func (srv *MongoDBService) CloseApiMongoDB() error {
+	if err := srv.client.Disconnect(*srv.context); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (apiMongoDB *ApiMongoDB) Subscribe(chatId int, lat, lon float64, t time.Time) error {
+func (srv *MongoDBService) Subscribe(chatId int, lat, lon float64, t time.Time) error {
 	s := Subscribers{ChatId: chatId, Location: Location{Longitude: lon, Latitude: lat}, Hour: t.Hour()}
 
 	// firstly delete all previos subscribe for this chatId
-	apiMongoDB.Unsubscribe(chatId)
+	srv.Unsubscribe(chatId)
 
-	collection := apiMongoDB.Client.Database(defaultDBName).Collection(defualtTableSubscribe)
+	collection := srv.client.Database(defaultDBName).Collection(defualtTableSubscribe)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*defualtTimeOut)
 	defer cancel()
 
@@ -87,13 +87,13 @@ func (apiMongoDB *ApiMongoDB) Subscribe(chatId int, lat, lon float64, t time.Tim
 		return err
 	}
 
-	apiMongoDB.Logger.Info("New object", "ID", res.InsertedID)
+	srv.logger.Info("New object", "ID", res.InsertedID)
 
 	return nil
 }
 
-func (apiMongoDB *ApiMongoDB) Unsubscribe(chatId int) error {
-	collection := apiMongoDB.Client.Database(defaultDBName).Collection(defualtTableSubscribe)
+func (srv *MongoDBService) Unsubscribe(chatId int) error {
+	collection := srv.client.Database(defaultDBName).Collection(defualtTableSubscribe)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*defualtTimeOut)
 	defer cancel()
 
@@ -105,13 +105,13 @@ func (apiMongoDB *ApiMongoDB) Unsubscribe(chatId int) error {
 		return err
 	}
 
-	apiMongoDB.Logger.Info("Deleted object(s)", "Count", res.DeletedCount)
+	srv.logger.Info("Deleted object(s)", "Count", res.DeletedCount)
 
 	return nil
 }
 
-func (apiMongoDB *ApiMongoDB) GetSubsribersByTime(h int) ([]primitive.M, error) {
-	collection := apiMongoDB.Client.Database(defaultDBName).Collection(defualtTableSubscribe)
+func (srv *MongoDBService) GetSubsribersByTime(h int) ([]primitive.M, error) {
+	collection := srv.client.Database(defaultDBName).Collection(defualtTableSubscribe)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*defualtTimeOut)
 	defer cancel()
 
@@ -139,40 +139,7 @@ func (apiMongoDB *ApiMongoDB) GetSubsribersByTime(h int) ([]primitive.M, error) 
 		return nil, err
 	}
 
-	apiMongoDB.Logger.Info("Results of ChatId", "Subscribers", results)
-
-	return results, nil
-}
-
-func (apiMongoDB *ApiMongoDB) GetAllSubsribers() ([]int, error) {
-	collection := apiMongoDB.Client.Database(defaultDBName).Collection(defualtTableSubscribe)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*defualtTimeOut)
-	defer cancel()
-
-	// Define the filter for the document you want to delete
-	cursor, err := collection.Find(ctx, bson.D{})
-	if err != nil {
-		return nil, err
-	}
-	defer cursor.Close(ctx)
-
-	var results []int
-	for cursor.Next(ctx) {
-		var document bson.M
-		if err := cursor.Decode(&document); err != nil {
-			return nil, err
-		}
-
-		if value, ok := document["chatid"]; ok {
-			results = append(results, int(value.(int32)))
-		}
-	}
-
-	if err := cursor.Err(); err != nil {
-		return nil, err
-	}
-
-	apiMongoDB.Logger.Info("Results of ChatId", "Subscribers", results)
+	srv.logger.Info("Results of ChatId", "Subscribers", results)
 
 	return results, nil
 }

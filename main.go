@@ -40,13 +40,13 @@ func main() {
 	}
 	apiHoliday := holiday.NewApiHoliday(&http.Client{}, holiday.HolidayApiUrl, cfg.TokenHoliday)
 	apiWeather := weather.NewApiWeather(&http.Client{}, weather.WeatherApiUrl, cfg.TokenWeather)
-	apiMongoDB, err := mongodb.NewApiMongoDB(mongodb.BaseURL, logger)
+	mongoDBSrv, err := mongodb.NewMongoDBService(mongodb.BaseURL, logger)
 	if err != nil {
 		logger.Error("Can`t create connection with MongoDB", "Error", err)
 	}
 
 	// create all background in one struct
-	telegramSrv := telegram.NewMyTelegramService(apiTelegram, apiHoliday, apiWeather, apiMongoDB)
+	telegramSrv := telegram.NewMyTelegramService(apiTelegram, apiHoliday, apiWeather, mongoDBSrv)
 
 	// Start ticker subscribers
 	ticker := time.NewTicker(time.Hour)
@@ -57,7 +57,7 @@ func main() {
 			case <-done:
 				return
 			case t := <-ticker.C:
-				subscribers, err := apiMongoDB.GetSubsribersByTime(t.Hour())
+				subscribers, err := mongoDBSrv.GetSubsribersByTime(t.Hour())
 				if err != nil {
 					logger.Error("Can`t create report", "Error", err)
 				}
