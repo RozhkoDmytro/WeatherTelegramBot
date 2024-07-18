@@ -8,7 +8,6 @@ import (
 	"projecttelegrambot/pkg/weather"
 
 	"git.foxminded.ua/foxstudent107249/telegrambot"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 const (
@@ -180,15 +179,14 @@ func (c *TelegramService) createReplayMsgHoliday(update *telegrambot.Update) err
 	return err
 }
 
-func (c *TelegramService) SendReportWeather(subscribers []primitive.M) {
-	for _, document := range subscribers {
+func (c *TelegramService) SendReportWeather(subscribers []mongodb.Subscribe) {
+	for _, s := range subscribers {
 		var update telegrambot.Update
 		var location telegrambot.Location
-		update.Message.Chat.ID = int(document["chatid"].(int32))
+		update.Message.Chat.ID = int(s.ChatId)
 		// Location
-		l := document["location"].(primitive.M)
-		location.Latitude = l["latitude"].(float64)
-		location.Longitude = l["longitude"].(float64)
+		location.Latitude = s.Location.Latitude
+		location.Longitude = s.Location.Latitude
 
 		update.Message.Location = &location
 		// Send report

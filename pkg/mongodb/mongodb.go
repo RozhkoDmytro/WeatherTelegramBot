@@ -110,7 +110,7 @@ func (srv *MongoDBService) Unsubscribe(chatId int) error {
 	return nil
 }
 
-func (srv *MongoDBService) GetSubsribersByTime(h int) ([]primitive.M, error) {
+func (srv *MongoDBService) GetSubsribersByTime(h int) ([]Subscribe, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*defualtTimeOut)
 	defer cancel()
 
@@ -122,7 +122,7 @@ func (srv *MongoDBService) GetSubsribersByTime(h int) ([]primitive.M, error) {
 	}
 	defer cursor.Close(ctx)
 
-	var results []primitive.M
+	var results []Subscribe
 	for cursor.Next(ctx) {
 		var document bson.M
 		if err := cursor.Decode(&document); err != nil {
@@ -130,7 +130,12 @@ func (srv *MongoDBService) GetSubsribersByTime(h int) ([]primitive.M, error) {
 		}
 
 		if _, ok := document["chatid"]; ok {
-			results = append(results, document)
+			var s Subscribe
+			err := s.mToSubscribe(document)
+			if err != nil {
+				return nil, err
+			}
+			results = append(results, s)
 		}
 	}
 
@@ -141,4 +146,18 @@ func (srv *MongoDBService) GetSubsribersByTime(h int) ([]primitive.M, error) {
 	srv.logger.Info("Results of ChatId", "Subscribers", results)
 
 	return results, nil
+}
+
+func (s *Subscribe) mToSubscribe(document primitive.M) error {
+	// Convert primitive.M to BSON byte slice
+	bsonBytes, err := bson.Marshal(document)
+	if err != nil {
+		return err
+	}
+	// Unmarshal BSON byte slice into struct
+	err = bson.Unmarshal(bsonBytes, &s)
+	if err != nil {
+		return err
+	}
+	return nil
 }
