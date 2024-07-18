@@ -49,7 +49,7 @@ func main() {
 	telegramSrv := telegram.NewMyTelegramService(apiTelegram, apiHoliday, apiWeather, mongoDBSrv)
 
 	// Start ticker subscribers
-	ticker := time.NewTicker(time.Second * 10)
+	ticker := time.NewTicker(time.Hour)
 	done := make(chan bool)
 	go telegramSrv.CheckSubscribers(done, ticker)
 	defer ticker.Stop()
