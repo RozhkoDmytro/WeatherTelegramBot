@@ -61,7 +61,9 @@ func main() {
 				if err != nil {
 					logger.Error("Can`t create report", "Error", err)
 				}
-				telegramSrv.SendReportWeather(subscribers)
+				if len(subscribers) != 0 {
+					telegramSrv.SendReportWeather(subscribers)
+				}
 			}
 		}
 	}()
