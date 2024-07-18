@@ -42,7 +42,7 @@ func main() {
 	apiWeather := weather.NewApiWeather(&http.Client{}, weather.WeatherApiUrl, cfg.TokenWeather)
 	mongoDBSrv, err := mongodb.NewMongoDBService(mongodb.BaseURL, logger)
 	if err != nil {
-		logger.Error("Can`t create connection with MongoDB", "Error", err)
+		panic(err)
 	}
 
 	// create all background in one struct
