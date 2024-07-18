@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	BaseURL               = "mongodb://localhost:27017"
+	BaseURL               = "mongodb://mongo:27017"
 	defaultDBName         = "Telegram"
 	defualtTableSubscribe = "Subscribe"
 	defualtTimeOut        = 5

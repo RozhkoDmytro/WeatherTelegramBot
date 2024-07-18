@@ -8,16 +8,9 @@ RUN apk update && apk add --no-cache git
 # Set the Current Working Directory inside the container
 WORKDIR /app
 
-# Accept build arguments for Git credentials
-ARG GIT_USERNAME
-ARG GIT_PASSWORD
-
-# Set environment variables for Git
-ENV GIT_USERNAME=$GIT_USERNAME
-ENV GIT_PASSWORD=$GIT_PASSWORD
-
-# Configure Git to use the provided credentials
-RUN git config --global url."https://${GIT_USERNAME}:${GIT_PASSWORD}@git.foxminded.ua".insteadOf "https://git.foxminded.ua"
+# Copy the .netrc file and set permissions
+COPY .netrc /root/.netrc
+RUN chmod 600 /root/.netrc
 
 # Copy go mod and sum files
 COPY go.mod go.sum ./

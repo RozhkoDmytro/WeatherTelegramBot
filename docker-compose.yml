@@ -2,18 +2,14 @@ version: '3.8'
 
 services:
   app:
-    build:
-      context: .
-      args:
-        GIT_USERNAME: your_username
-        GIT_PASSWORD: your_password
-    container_name: go_app
+    build: .
+    container_name: telegrambot
     ports:
       - "8080:8080"
     depends_on:
       - mongo
     environment:
-      MONGO_URI: mongodb://mongo:27017/mydatabase
+      MONGO_URI: mongodb://mongo:27017/Telegram
     networks:
       - go-mongo-network
 
