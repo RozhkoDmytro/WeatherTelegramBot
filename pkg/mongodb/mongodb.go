@@ -27,7 +27,7 @@ type MongoDBService struct {
 	collection *mongo.Collection
 }
 
-type Subscribers struct {
+type Subscribe struct {
 	ChatId   int      `json:"chatId"`
 	Location Location `json:"location"`
 	Hour     int      `json:"hour"`
@@ -75,7 +75,7 @@ func (srv *MongoDBService) CloseApiMongoDB() error {
 }
 
 func (srv *MongoDBService) Subscribe(chatId int, lat, lon float64, t time.Time) error {
-	s := Subscribers{ChatId: chatId, Location: Location{Longitude: lon, Latitude: lat}, Hour: t.Hour()}
+	s := Subscribe{ChatId: chatId, Location: Location{Longitude: lon, Latitude: lat}, Hour: t.Hour()}
 
 	// firstly delete all previos subscribe for this chatId
 	srv.Unsubscribe(chatId)
