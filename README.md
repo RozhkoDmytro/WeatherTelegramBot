@@ -13,6 +13,10 @@ Set secret environment variables to .env file (firstly You sude rename ".sample.
 
 /weather - get the current weather for your location
 
+/subcsribe -   subscription to the weather report,
+
+/unsubcsribe - unsubscription to the weather report,
+
 /about – provides short info about you
 
 /links – provides a list of your social links (GitHub, Linkedin, etc)

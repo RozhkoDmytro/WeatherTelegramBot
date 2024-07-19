@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"projecttelegrambot/pkg/holiday"
+	"projecttelegrambot/pkg/mongodb"
 	"projecttelegrambot/pkg/weather"
 
 	"git.foxminded.ua/foxstudent107249/telegrambot"
@@ -14,6 +15,9 @@ const (
 	DefaultHelpStartInfo = `
 /start   - get keyboard with flags
 /help    - too same like start
+/weather - get the current weather for your location
+/subcsribe -   subscription to the weather report,
+/unsubcsribe - unsubscription to the weather report,
 /about  - get some information about me
 /links   - send my(developer) links`
 
@@ -25,17 +29,23 @@ https://animated-panda-0382af.netlify.app/
 )
 
 type TelegramService struct {
-	apiTelegram *telegrambot.ApiTelegramBot
-	apiHoliday  *holiday.ApiHoliday
-	apiWeather  *weather.ApiWeather
+	apiTelegram     *telegrambot.ApiTelegramBot
+	apiHoliday      *holiday.ApiHoliday
+	apiWeather      *weather.ApiWeather
+	mongoDBSrv      *mongodb.MongoDBService
+	previousCommand PreviousCommand
 }
 
+type PreviousCommand map[int]string
+
 var infoMap = map[string]string{
-	"/start":   DefaultHelpStartInfo,
-	"/help":    DefaultHelpStartInfo,
-	"/weather": "Get the current weather for your location",
-	"/about":   "Rozhko Dmytro; Go developer; bad character; unmarried (C)",
-	"/links":   DefaultLinksInfo,
+	"/start":       DefaultHelpStartInfo,
+	"/help":        DefaultHelpStartInfo,
+	"/weather":     "Get the current weather for your location",
+	"/subcsribe":   "Subscription to the weather report",
+	"/unsubcsribe": "Unsubscription to the weather report",
+	"/about":       "Rozhko Dmytro; Go developer; bad character; unmarried (C)",
+	"/links":       DefaultLinksInfo,
 }
 
 var DefualtKeyboard = telegrambot.ReplyKeyboardMarkup{
@@ -83,21 +93,31 @@ var flagsCountryMap = map[string]string{
 	DefaultFlags[5]: "UA",
 }
 
-func NewMyTelegramService(apiTelegram *telegrambot.ApiTelegramBot, apiHoliday *holiday.ApiHoliday, apiWeather *weather.ApiWeather) *TelegramService {
-	return &TelegramService{apiTelegram: apiTelegram, apiHoliday: apiHoliday, apiWeather: apiWeather}
+func NewMyTelegramService(apiTelegram *telegrambot.ApiTelegramBot, apiHoliday *holiday.ApiHoliday, apiWeather *weather.ApiWeather, mongoDBSrv *mongodb.MongoDBService) *TelegramService {
+	return &TelegramService{
+		apiTelegram:     apiTelegram,
+		apiHoliday:      apiHoliday,
+		apiWeather:      apiWeather,
+		mongoDBSrv:      mongoDBSrv,
+		previousCommand: PreviousCommand{},
+	}
 }
 
 func (c *TelegramService) CreateSendResponse(update *telegrambot.Update) error {
 	command := update.Message.Text
 	chatId := update.Message.Chat.ID
 
+	c.saveCommand(chatId, command)
+
 	switch command {
 	case "/start":
 		_, err := c.apiTelegram.CreateReplyKeyboard(chatId, command, DefualtKeyboard)
 		return err
-	case "/weather":
+	case "/weather", "/subcsribe":
 		_, err := c.apiTelegram.CreateReplyKeyboard(chatId, "Pls, get location", DefualtKeyboardGeolacation)
 		return err
+	case "/unsubcsribe":
+		return c.mongoDBSrv.Unsubscribe(chatId)
 	default:
 		// Unknown
 		if isUnknownCommand(update) {
@@ -115,10 +135,40 @@ func (c *TelegramService) CreateSendResponse(update *telegrambot.Update) error {
 		}
 		// responce with fill Location
 		if update.Message.Location != nil {
-			return c.createReplayMsgWeather(update)
+			// check previous command!
+			switch c.previousCommand[chatId] {
+			case "/subcsribe":
+				err := c.mongoDBSrv.Subscribe(chatId, update.Message.Location.Latitude, update.Message.Location.Longitude, time.Now())
+				if err == nil {
+					c.apiTelegram.CreateReplayMsg(chatId, "Subscription successfully added", CurrentParseMode)
+				}
+				return err
+			default:
+				return c.createReplayMsgWeather(update)
+			}
 		}
+
 	}
 	return nil
+}
+
+// check subscribers in this hour and send report about currently weather
+func (c *TelegramService) CheckSubscribers(done chan bool, ticker *time.Ticker) {
+	for {
+		select {
+		case <-done:
+			return
+		case t := <-ticker.C:
+			subscribers, err := c.mongoDBSrv.GetSubsribersByTime(t.Hour())
+			if err != nil {
+				c.apiTelegram.Logger.Error("Can`t create report", "Error", err)
+			}
+			if len(subscribers) != 0 {
+				c.SendReportWeather(subscribers)
+			}
+
+		}
+	}
 }
 
 // send API request and create text message with weather and sen him
@@ -148,7 +198,29 @@ func (c *TelegramService) createReplayMsgHoliday(update *telegrambot.Update) err
 	return err
 }
 
+func (c *TelegramService) SendReportWeather(subscribers []mongodb.Subscribe) {
+	for _, s := range subscribers {
+		var update telegrambot.Update
+		var location telegrambot.Location
+		update.Message.Chat.ID = int(s.ChatId)
+		// Location
+		location.Latitude = s.Location.Latitude
+		location.Longitude = s.Location.Latitude
+
+		update.Message.Location = &location
+		// Send report
+		err := c.createReplayMsgWeather(&update)
+		c.apiTelegram.Logger.Error("Can`t create report", "Error", err)
+	}
+}
+
 func isUnknownCommand(update *telegrambot.Update) bool {
 	command := update.Message.Text
 	return infoMap[command] == "" && flagsCountryMap[command] == "" && update.Message.Location == nil
+}
+
+func (c *TelegramService) saveCommand(chatId int, command string) {
+	if infoMap[command] != "" {
+		c.previousCommand[chatId] = command
+	}
 }
