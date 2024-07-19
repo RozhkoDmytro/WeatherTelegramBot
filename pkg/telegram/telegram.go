@@ -201,7 +201,9 @@ func (c *TelegramService) SendReportWeather(subscribers []mongodb.Subscribe) {
 	for _, s := range subscribers {
 		// Send report
 		err := c.createReplayMsgWeather(s.ChatId, s.Location.Latitude, s.Location.Longitude)
-		c.apiTelegram.Logger.Error("Can`t create report", "Error", err)
+		if err != nil {
+			c.apiTelegram.Logger.Error("Can`t create report", "Error", err)
+		}
 	}
 }
 
