@@ -144,7 +144,7 @@ func (c *TelegramService) CreateSendResponse(update *telegrambot.Update) error {
 				}
 				return err
 			default:
-				return c.createReplayMsgWeather(update)
+				return c.createReplayMsgWeather(chatId, update.Message.Location.Latitude, update.Message.Location.Longitude)
 			}
 		}
 
@@ -159,7 +159,7 @@ func (c *TelegramService) CheckSubscribers(done chan bool, ticker *time.Ticker) 
 		case <-done:
 			return
 		case t := <-ticker.C:
-			subscribers, err := c.mongoDBSrv.GetSubsribersByTime(t.Hour())
+			subscribers, err := c.mongoDBSrv.GetSubscribersByTime(t.Hour())
 			if err != nil {
 				c.apiTelegram.Logger.Error("Can`t create report", "Error", err)
 			}
@@ -172,9 +172,8 @@ func (c *TelegramService) CheckSubscribers(done chan bool, ticker *time.Ticker) 
 }
 
 // send API request and create text message with weather and sen him
-func (c *TelegramService) createReplayMsgWeather(update *telegrambot.Update) error {
-	chatId := update.Message.Chat.ID
-	resp, err := c.apiWeather.Load(update.Message.Location.Latitude, update.Message.Location.Longitude)
+func (c *TelegramService) createReplayMsgWeather(chatId int, lat, lon float64) error {
+	resp, err := c.apiWeather.Load(lat, lon)
 	if err != nil {
 		return err
 	}
@@ -205,11 +204,11 @@ func (c *TelegramService) SendReportWeather(subscribers []mongodb.Subscribe) {
 		update.Message.Chat.ID = int(s.ChatId)
 		// Location
 		location.Latitude = s.Location.Latitude
-		location.Longitude = s.Location.Latitude
+		location.Longitude = s.Location.Longitude
 
 		update.Message.Location = &location
 		// Send report
-		err := c.createReplayMsgWeather(&update)
+		err := c.createReplayMsgWeather(s.ChatId, s.Location.Latitude, s.Location.Longitude)
 		c.apiTelegram.Logger.Error("Can`t create report", "Error", err)
 	}
 }

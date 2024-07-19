@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -68,10 +67,7 @@ func NewMongoDBService(url string, l *slog.Logger) (*MongoDBService, error) {
 }
 
 func (srv *MongoDBService) CloseApiMongoDB() error {
-	if err := srv.client.Disconnect(*srv.context); err != nil {
-		return err
-	}
-	return nil
+	return srv.client.Disconnect(*srv.context)
 }
 
 func (srv *MongoDBService) Subscribe(chatId int, lat, lon float64, t time.Time) error {
@@ -110,11 +106,11 @@ func (srv *MongoDBService) Unsubscribe(chatId int) error {
 	return nil
 }
 
-func (srv *MongoDBService) GetSubsribersByTime(h int) ([]Subscribe, error) {
+func (srv *MongoDBService) GetSubscribersByTime(h int) ([]Subscribe, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*defualtTimeOut)
 	defer cancel()
 
-	// Define the filter for the document you want to delete
+	// Define the filter for the documents you want to find
 	filter := bson.D{{Key: "hour", Value: h}}
 	cursor, err := srv.collection.Find(ctx, filter)
 	if err != nil {
@@ -123,41 +119,11 @@ func (srv *MongoDBService) GetSubsribersByTime(h int) ([]Subscribe, error) {
 	defer cursor.Close(ctx)
 
 	var results []Subscribe
-	for cursor.Next(ctx) {
-		var document bson.M
-		if err := cursor.Decode(&document); err != nil {
-			return nil, err
-		}
-
-		if _, ok := document["chatid"]; ok {
-			var s Subscribe
-			err := s.mToSubscribe(document)
-			if err != nil {
-				return nil, err
-			}
-			results = append(results, s)
-		}
-	}
-
-	if err := cursor.Err(); err != nil {
+	if err := cursor.All(ctx, &results); err != nil {
 		return nil, err
 	}
 
 	srv.logger.Info("Results of ChatId", "Subscribers", results)
 
 	return results, nil
-}
-
-func (s *Subscribe) mToSubscribe(document primitive.M) error {
-	// Convert primitive.M to BSON byte slice
-	bsonBytes, err := bson.Marshal(document)
-	if err != nil {
-		return err
-	}
-	// Unmarshal BSON byte slice into struct
-	err = bson.Unmarshal(bsonBytes, &s)
-	if err != nil {
-		return err
-	}
-	return nil
 }
