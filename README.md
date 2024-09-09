@@ -1,10 +1,9 @@
-# ProjectGeneric
-
 ## Name
-Telegram-bot
+Weather Telegram-bot
 
 ## Description
-First version of my telegram bot
+This is a simple Telegram bot that can provide information about current holidays and weather. 
+You can also subscribe and unsubscribe to the bot's notifications.
 
 ## Examples:
 Set secret environment variables to .env file (firstly You sude rename ".sample.env" file) 
@@ -28,18 +27,19 @@ Set secret environment variables to .env file (firstly You sude rename ".sample.
 ![alt text](/storage/img/flags.png)
 ![alt text](/storage/img/weather.png)
 
-## Visuals
+## Getting Started
+- Docker (for containerized setup)
+- Go 1.16+ (for local setup)
+- MongodB
+- Telegram token
 
-## Usage
-
-## Support
-d.rozhko.ua@gmail.com
-
-## Roadmap
-no plans
+## Running with Docker
+Ensure you have Docker installed.
+Run the following command to start up the containers:
+```
+docker-compose up --build
+```
 
 ## License
-Open source
 
-## Project status
-In Progress
+This project is licensed under the MIT License
