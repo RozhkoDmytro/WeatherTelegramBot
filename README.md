@@ -24,7 +24,6 @@ Set secret environment variables to .env file (firstly You sude rename ".sample.
 ## Badges
 ![alt text](/storage/img/example.png)
 ![alt text](/storage/img/flags.png)
-![alt text](/storage/img/weather.png)
 
 ## Getting Started
 - Docker (for containerized setup)
