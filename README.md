@@ -1,5 +1,4 @@
-## Name
-Weather Telegram-bot
+## Weather Telegram-bot
 
 ## Description
 This is a simple Telegram bot that can provide information about current holidays and weather. 
